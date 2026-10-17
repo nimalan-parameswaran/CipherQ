@@ -230,6 +230,22 @@ class CipherQAPIClient {
     }
     return await res.json();
   }
+
+  async adminChangePlan(email, newPlan, adminToken, reason = "dev_admin_ui") {
+    const res = await fetch(`${this.baseUrl}/admin/users/plan`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Admin-Token": adminToken
+      },
+      body: JSON.stringify({ email, new_plan: newPlan, reason })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Plan modification failed." }));
+      throw new Error(err.detail || "Plan modification failed.");
+    }
+    return await res.json();
+  }
 }
 
 export const api = new CipherQAPIClient();

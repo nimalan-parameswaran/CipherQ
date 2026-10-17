@@ -4,7 +4,9 @@ import { api } from "./api.js";
 
 function formatBytes(bytes) {
   if (!bytes || bytes === 0) return "0 B";
-  const k = 1024;
+  if (bytes === 1000000000) return "1 GB";
+  if (bytes === 5000000000) return "5 GB";
+  const k = 1000; // Decimal GB standard
   const sizes = ["B", "KB", "MB", "GB", "TB"];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
@@ -227,6 +229,77 @@ export async function initApp() {
   // AI Chat Page
   if (document.getElementById("ai-chat-form") || currentPage.includes("ai-chat")) {
     await initAIChat(user);
+  }
+
+  // Pricing Page
+  if (document.getElementById("plan-switcher-body") || currentPage.includes("pricing")) {
+    await initPricing(user);
+  }
+}
+
+// ---------------------------------------------------------
+// Pricing & Plan Management Controller
+// ---------------------------------------------------------
+async function initPricing(user) {
+  const container = document.getElementById("plan-switcher-body");
+  if (!container) return;
+
+  if (!user) {
+    container.innerHTML = `
+      <div style="background:rgba(28,37,65,0.4); border:1px solid var(--border-color); border-radius:6px; padding:1rem; text-align:center;">
+        <p style="color:var(--text-secondary); margin-bottom:0.75rem;">You must be signed in to manage or switch your subscription tier.</p>
+        <button id="pricing-login-btn" class="btn btn-primary btn-sm">Log In to Manage Plan</button>
+      </div>
+    `;
+    const btn = document.getElementById("pricing-login-btn");
+    if (btn) btn.addEventListener("click", () => openAuthModal("login"));
+    return;
+  }
+
+  const isPremium = (user.plan_type === "PREMIUM");
+  const targetPlan = isPremium ? "FREE" : "PREMIUM";
+
+  container.innerHTML = `
+    <div style="background:rgba(28,37,65,0.6); border:1px solid var(--border-color); border-radius:6px; padding:1.25rem;">
+      <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:1rem;">
+        <div>
+          <div style="font-size:0.85rem; color:var(--text-muted);">Current Active Account:</div>
+          <div style="font-weight:700; font-size:1.1rem; color:var(--text-primary);">${user.email}</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:0.85rem; color:var(--text-muted);">Subscription Plan:</div>
+          <span class="badge ${isPremium ? 'badge-premium' : 'badge-free'}" style="font-size:0.9rem;">${user.plan_type}</span>
+        </div>
+      </div>
+      <div id="plan-change-alert" style="display:none; margin-bottom:1rem;"></div>
+      <div style="display:flex; gap:1rem; align-items:center; flex-wrap:wrap;">
+        <button id="btn-toggle-plan" class="btn ${isPremium ? 'btn-outline' : 'btn-primary'} btn-sm">
+          ${isPremium ? 'Downgrade to FREE Plan (1 GB)' : 'Upgrade to PREMIUM Plan (5 GB)'}
+        </button>
+        <span style="font-size:0.8rem; color:var(--text-muted);">Requires development admin token authentication.</span>
+      </div>
+    </div>
+  `;
+
+  const toggleBtn = document.getElementById("btn-toggle-plan");
+  if (toggleBtn) {
+    toggleBtn.addEventListener("click", async () => {
+      const adminToken = prompt(`Enter Development Admin Token to change ${user.email} to ${targetPlan}:`, "cipherq-dev-admin-secret-2026");
+      if (!adminToken) return;
+
+      const alertBox = document.getElementById("plan-change-alert");
+      try {
+        await api.adminChangePlan(user.email, targetPlan, adminToken, "pricing_page_admin_switch");
+        alertBox.className = "alert alert-success";
+        alertBox.style.display = "block";
+        alertBox.textContent = `Successfully updated subscription to ${targetPlan}! Reloading...`;
+        setTimeout(() => window.location.reload(), 1000);
+      } catch (err) {
+        alertBox.className = "alert alert-danger";
+        alertBox.style.display = "block";
+        alertBox.textContent = `Plan change rejected: ${err.message}`;
+      }
+    });
   }
 }
 

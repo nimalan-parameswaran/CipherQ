@@ -4,7 +4,7 @@ Implements authenticated streaming upload, download with decryption,
 file listing with ownership isolation, quota checks, and recoverable deletion via cleanup_queue.
 """
 import uuid
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Response
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Response, Request
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import text
@@ -24,19 +24,22 @@ from backend.app.services.vault import (
     QuotaExceededError,
     VaultIntegrityError
 )
+from backend.app.services.entitlements import (
+    entitlement_service,
+    QuotaExceededError as EntitlementQuotaExceeded
+)
 
 router = APIRouter(prefix="/files", tags=["Files"])
 
 
 def get_user_quota(user: User) -> int:
     """Return maximum allowed storage bytes based on subscription tier."""
-    if user.plan_type == "PREMIUM":
-        return settings.PREMIUM_QUOTA_BYTES
-    return settings.FREE_QUOTA_BYTES
+    return entitlement_service.get_user_quota(user)
 
 
 @router.post("", response_model=FileResponse, status_code=status.HTTP_201_CREATED)
 async def upload_file(
+    request: Request,
     file: UploadFile = File(...),
     current_user: User = Depends(get_current_user),
     _csrf: None = Depends(verify_csrf),
@@ -45,20 +48,24 @@ async def upload_file(
     """
     Stream upload directly to the encrypted vault.
     Enforces storage quotas, generates a per-file DEK, wraps DEK with Master KEK,
-    and performs atomic file staging.
+    and performs atomic file staging with concurrency protection.
     """
     # 1. Check current storage utilization
     stmt = select(UsageRecord).where(UsageRecord.user_id == current_user.id)
     usage = (await db.execute(stmt)).scalar_one_or_none()
     current_bytes = usage.storage_bytes_used if usage else 0
     quota_bytes = get_user_quota(current_user)
-    remaining_bytes = quota_bytes - current_bytes
 
-    if remaining_bytes <= 0:
+    # Fast rejection if already at or over quota (e.g. after a downgrade)
+    if current_bytes >= quota_bytes:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-            detail=f"Storage quota exceeded. Your plan quota is {quota_bytes // (1024*1024)} MB."
+            detail=f"Storage quota exceeded. Your current usage ({current_bytes} bytes) meets or exceeds your {current_user.plan_type} plan quota ({quota_bytes} bytes). Delete files to regain upload capacity."
         )
+
+    # Check client Content-Length if present
+    content_len_header = request.headers.get("content-length")
+    content_len = int(content_len_header) if (content_len_header and content_len_header.isdigit()) else None
 
     file_id = str(uuid.uuid4())
     safe_name = sanitize_filename(file.filename or "untitled")
@@ -69,15 +76,22 @@ async def upload_file(
     master_kek = key_manager.load_master_key()
     wrapped_dek = wrap_dek(file_dek, master_kek)
 
-    # 3. Stream encrypt directly to disk
+    # 3. Stream encrypt directly to disk guarded by InFlightQuotaTracker
     try:
-        storage_name, file_size, sha256_hash = await vault_service.encrypt_stream_to_vault(
-            file_id=file_id,
-            upload_stream=file,
-            dek=file_dek,
-            max_allowed_bytes=remaining_bytes
-        )
-    except QuotaExceededError as e:
+        async with entitlement_service.tracker.track_upload(
+            user_id=current_user.id,
+            current_committed_bytes=current_bytes,
+            quota_bytes=quota_bytes,
+            content_length=content_len
+        ):
+            remaining_bytes = max(0, quota_bytes - current_bytes)
+            storage_name, file_size, sha256_hash = await vault_service.encrypt_stream_to_vault(
+                file_id=file_id,
+                upload_stream=file,
+                dek=file_dek,
+                max_allowed_bytes=remaining_bytes
+            )
+    except (QuotaExceededError, EntitlementQuotaExceeded) as e:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
             detail=str(e)
@@ -88,7 +102,19 @@ async def upload_file(
             detail=f"File encryption failed: {e}"
         )
 
-    # 4. Save metadata to database
+    # 4. Atomic verification at commit time
+    # Check if a concurrent request completed during streaming and exhausted the remaining quota
+    stmt_recheck = select(UsageRecord).where(UsageRecord.user_id == current_user.id)
+    usage = (await db.execute(stmt_recheck)).scalar_one_or_none()
+    fresh_bytes = usage.storage_bytes_used if usage else 0
+    if fresh_bytes + file_size > quota_bytes:
+        vault_service.delete_vault_file(storage_name)
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"Storage quota exceeded during concurrent upload. Plan limit is {quota_bytes} bytes."
+        )
+
+    # 5. Save metadata to database
     file_record = FileRecord(
         id=file_id,
         user_id=current_user.id,

@@ -16,6 +16,7 @@ from backend.app.services.vault import reconcile_startup_vault
 from backend.app.api.auth import router as auth_router
 from backend.app.api.files import router as files_router
 from backend.app.api.ai import router as ai_router
+from backend.app.api.admin import router as admin_router
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 
@@ -69,6 +70,7 @@ app = FastAPI(
 app.include_router(auth_router, prefix=settings.API_V1_STR)
 app.include_router(files_router, prefix=settings.API_V1_STR)
 app.include_router(ai_router, prefix=settings.API_V1_STR)
+app.include_router(admin_router, prefix=settings.API_V1_STR)
 
 
 @app.get(f"{settings.API_V1_STR}/health", tags=["Health"])

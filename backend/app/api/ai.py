@@ -211,16 +211,39 @@ async def query_vault_documents(
             usage.ai_queries_today += 1
             await db.commit()
 
-        # Execute hybrid search
-        hits = await search_service.hybrid_search(
-            db=db,
-            user_id=current_user.id,
-            query=payload.query,
-            plan_type=current_user.plan_type,
-            limit=payload.limit
-        )
-
-        mode_used = "HYBRID (FTS5 + SEMANTIC)" if current_user.plan_type == "PREMIUM" else "FTS5_KEYWORD"
+        # Enforce tier-specific capability gating
+        requested_mode = (payload.mode or "auto").strip().lower()
+        if requested_mode == "semantic":
+            if current_user.plan_type != "PREMIUM":
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail="Semantic vector search requires an active PREMIUM subscription."
+                )
+            hits = await search_service.semantic_vector_search(
+                db=db,
+                user_id=current_user.id,
+                query=payload.query,
+                limit=payload.limit
+            )
+            mode_used = "SEMANTIC_VECTOR"
+        elif requested_mode == "keyword":
+            hits = await search_service.fts5_keyword_search(
+                db=db,
+                user_id=current_user.id,
+                query=payload.query,
+                limit=payload.limit
+            )
+            mode_used = "FTS5_KEYWORD"
+        else:
+            # Auto mode: Hybrid for PREMIUM, FTS5 Keyword for FREE
+            hits = await search_service.hybrid_search(
+                db=db,
+                user_id=current_user.id,
+                query=payload.query,
+                plan_type=current_user.plan_type,
+                limit=payload.limit
+            )
+            mode_used = "HYBRID (FTS5 + SEMANTIC)" if current_user.plan_type == "PREMIUM" else "FTS5_KEYWORD"
 
         # Synthesize grounded answer
         answer_data = search_service.synthesize_grounded_answer(payload.query, hits)
@@ -245,3 +268,23 @@ async def query_vault_documents(
             plan_tier=current_user.plan_type,
             mode_used=mode_used
         )
+
+
+@router.post("/semantic", response_model=QueryAnswerResponse)
+async def query_semantic_exclusive(
+    payload: SearchQueryRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """
+    Dedicated semantic-only vector retrieval endpoint.
+    Strictly restricted to PREMIUM subscribers. Rejects FREE users with 403 Forbidden.
+    """
+    if current_user.plan_type != "PREMIUM":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Semantic vector search requires an active PREMIUM subscription."
+        )
+    payload.mode = "semantic"
+    return await query_vault_documents(payload, current_user, db)
+

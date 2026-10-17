@@ -291,6 +291,27 @@ async def reconcile_startup_vault(session_factory) -> dict:
                 except Exception:
                     pass
 
+    # 4. Authoritative storage usage reconciliation across all users
+    from sqlalchemy import func
+    from backend.app.db.models import User, UsageRecord
+    async with session_factory() as db:
+        users_stmt = select(User.id)
+        user_ids = (await db.execute(users_stmt)).scalars().all()
+        for u_id in user_ids:
+            sum_stmt = select(func.coalesce(func.sum(FileRecord.file_size_bytes), 0)).where(
+                FileRecord.user_id == u_id,
+                FileRecord.status == "ACTIVE"
+            )
+            actual_used = (await db.execute(sum_stmt)).scalar_one()
+
+            usage_stmt = select(UsageRecord).where(UsageRecord.user_id == u_id)
+            u_rec = (await db.execute(usage_stmt)).scalar_one_or_none()
+            if u_rec:
+                u_rec.storage_bytes_used = actual_used
+            else:
+                db.add(UsageRecord(user_id=u_id, storage_bytes_used=actual_used))
+        await db.commit()
+
     return summary
 
 

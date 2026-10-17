@@ -35,9 +35,12 @@ class Settings(BaseSettings):
     AUTH_RATE_LIMIT_REGISTER_MAX: int = 3
     AUTH_RATE_LIMIT_REGISTER_WINDOW_SEC: int = 60
     
-    # Plan Storage Caps (bytes)
-    FREE_QUOTA_BYTES: int = 1 * 1024 * 1024 * 1024       # 1 GB
-    PREMIUM_QUOTA_BYTES: int = 5 * 1024 * 1024 * 1024    # 5 GB
+    # Plan Storage Caps (Decimal GB: 1 GB = 1,000,000,000 bytes)
+    FREE_QUOTA_BYTES: int = 1_000_000_000       # 1 GB
+    PREMIUM_QUOTA_BYTES: int = 5_000_000_000    # 5 GB
+
+    # Administrative Operations Token (Development / Local Administration)
+    ADMIN_TOKEN: str = "cipherq-dev-admin-secret-2026"
 
     model_config = SettingsConfigDict(
         env_file=str(BASE_DIR / ".env"),

@@ -16,6 +16,7 @@ class IndexResponse(BaseModel):
 
 class SearchQueryRequest(BaseModel):
     query: str = Field(..., min_length=1, max_length=500, description="Natural language search query")
+    mode: str = Field(default="auto", description="Search mode: auto, keyword, semantic")
     limit: int = Field(default=5, ge=1, le=20)
 
 

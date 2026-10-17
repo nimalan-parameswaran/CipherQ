@@ -28,6 +28,7 @@ from backend.app.schemas.auth import (
     UsageResponse
 )
 from backend.app.api.deps import get_current_user, get_current_session_and_user, verify_csrf
+from backend.app.services.entitlements import entitlement_service
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
@@ -208,12 +209,9 @@ async def get_my_usage(
     storage_used = usage.storage_bytes_used if usage else 0
     ai_queries = usage.ai_queries_today if usage else 0
 
-    quota = (
-        settings.PREMIUM_QUOTA_BYTES
-        if current_user.plan_type == "PREMIUM"
-        else settings.FREE_QUOTA_BYTES
-    )
-    ai_limit = 100 if current_user.plan_type == "PREMIUM" else 0
+    quota = entitlement_service.get_user_quota(current_user)
+    entitlements = entitlement_service.get_user_entitlements(current_user)
+    ai_limit = entitlements["ai_daily_limit"]
 
     return UsageResponse(
         storage_bytes_used=storage_used,

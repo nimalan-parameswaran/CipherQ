@@ -38,6 +38,7 @@ class User(Base):
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan")
     files = relationship("FileRecord", back_populates="user", cascade="all, delete-orphan")
     usage = relationship("UsageRecord", back_populates="user", uselist=False, cascade="all, delete-orphan")
+    plan_audits = relationship("PlanAuditEvent", back_populates="user", cascade="all, delete-orphan")
 
 
 class Session(Base):
@@ -137,8 +138,28 @@ class UsageRecord(Base):
     user = relationship("User", back_populates="usage")
 
 
+class PlanAuditEvent(Base):
+    """
+    Auditable history of user subscription plan modifications.
+    Strictly excludes sensitive tokens, passwords, or file contents.
+    """
+    __tablename__ = "plan_audit_events"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    old_plan = Column(String(20), nullable=False)
+    new_plan = Column(String(20), nullable=False)
+    changed_by = Column(String(50), nullable=False)  # "admin_api", "cli_admin"
+    reason = Column(String(255), nullable=True)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+
+    user = relationship("User", back_populates="plan_audits")
+
+
 # Composite indexes for fast queries
 Index("ix_files_user_status", FileRecord.user_id, FileRecord.status)
 Index("ix_chunks_user_file", FileChunk.user_id, FileChunk.file_id)
 Index("ix_embeddings_user", ChunkEmbedding.user_id)
 Index("ix_cleanup_status_retries", CleanupQueue.status, CleanupQueue.retry_count)
+Index("ix_plan_audits_user_created", PlanAuditEvent.user_id, PlanAuditEvent.created_at)
+
