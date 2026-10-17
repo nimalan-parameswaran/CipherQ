@@ -363,18 +363,21 @@ async function renderFileList(container) {
   // Attach download handlers
   container.querySelectorAll(".download-btn").forEach(btn => {
     btn.addEventListener("click", async (e) => {
-      const id = e.currentTarget.getAttribute("data-id");
-      const name = e.currentTarget.getAttribute("data-name");
-      const originalText = e.currentTarget.textContent;
+      const targetBtn = e.currentTarget;
+      const id = targetBtn.getAttribute("data-id");
+      const name = targetBtn.getAttribute("data-name");
+      const originalText = targetBtn.textContent;
       try {
-        e.currentTarget.disabled = true;
-        e.currentTarget.textContent = "Decrypting...";
+        targetBtn.disabled = true;
+        targetBtn.textContent = "Decrypting...";
         await api.downloadFile(id, name);
       } catch (err) {
         alert("Download failed: " + err.message);
       } finally {
-        e.currentTarget.disabled = false;
-        e.currentTarget.textContent = originalText;
+        if (targetBtn) {
+          targetBtn.disabled = false;
+          targetBtn.textContent = originalText;
+        }
       }
     });
   });
