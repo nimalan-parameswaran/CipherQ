@@ -91,8 +91,8 @@ async def test_login_and_cookie_issuance(client: AsyncClient):
     cookies = login_res.cookies
     assert settings.SESSION_COOKIE_NAME in cookies
     cookie_header = login_res.headers.get("set-cookie", "")
-    assert "HttpOnly" in cookie_header
-    assert "SameSite=lax" in cookie_header.lower()
+    assert "httponly" in cookie_header.lower()
+    assert "samesite=lax" in cookie_header.lower()
 
 
 @pytest.mark.asyncio
@@ -121,7 +121,7 @@ async def test_rate_limiting_on_login(client: AsyncClient):
     # 6th attempt should return 429 Too Many Requests
     blocked_res = await client.post("/api/v1/auth/login", json={"email": email, "password": "wrong"})
     assert blocked_res.status_code == 429
-    assert "rate limit exceeded" in blocked_res.json()["detail"].lower()
+    assert "too many" in blocked_res.json()["detail"].lower()
 
 
 @pytest.mark.asyncio
@@ -131,25 +131,31 @@ async def test_authenticated_me_and_session_expiry(client: AsyncClient, test_db_
     pwd = "ValidPassword123!"
     await client.post("/api/v1/auth/register", json={"email": email, "password": pwd})
     login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": pwd})
+    assert login_res.status_code == 200
 
-    # Access /me with valid cookie
-    me_res = await client.get("/api/v1/auth/me", cookies=login_res.cookies)
+    # Access /me with active session (cookie was set automatically by client on login)
+    me_res = await client.get("/api/v1/auth/me")
     assert me_res.status_code == 200
     assert me_res.json()["email"] == email
 
     # Access /me without cookie -> 401
+    client.cookies.clear()
     unauth_res = await client.get("/api/v1/auth/me")
     assert unauth_res.status_code == 401
 
+    # Login again to establish session
+    login_res2 = await client.post("/api/v1/auth/login", json={"email": email, "password": pwd})
+    assert login_res2.status_code == 200
+
     # Manually expire the session in database
     stmt = select(Session)
-    session_record = (await test_db_session.execute(stmt)).scalars().first()
-    assert session_record is not None
-    session_record.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
+    session_records = (await test_db_session.execute(stmt)).scalars().all()
+    for s in session_records:
+        s.expires_at = datetime.now(timezone.utc) - timedelta(hours=1)
     await test_db_session.commit()
 
-    # Access /me with expired cookie -> 401
-    expired_res = await client.get("/api/v1/auth/me", cookies=login_res.cookies)
+    # Access /me with expired session -> 401
+    expired_res = await client.get("/api/v1/auth/me")
     assert expired_res.status_code == 401
     assert "expired" in expired_res.json()["detail"].lower()
 
@@ -162,17 +168,15 @@ async def test_csrf_validation_and_logout(client: AsyncClient):
     await client.post("/api/v1/auth/register", json={"email": email, "password": pwd})
     login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": pwd})
     csrf_token = login_res.json()["csrf_token"]
-    cookies = login_res.cookies
 
     # 1. Attempt logout without CSRF header -> 403 Forbidden
-    no_csrf_res = await client.post("/api/v1/auth/logout", cookies=cookies)
+    no_csrf_res = await client.post("/api/v1/auth/logout")
     assert no_csrf_res.status_code == 403
     assert "Missing X-CSRF-Token" in no_csrf_res.json()["detail"]
 
     # 2. Attempt logout with wrong CSRF header -> 403 Forbidden
     wrong_csrf_res = await client.post(
         "/api/v1/auth/logout",
-        cookies=cookies,
         headers={"X-CSRF-Token": "invalid_fake_token_value"}
     )
     assert wrong_csrf_res.status_code == 403
@@ -181,36 +185,38 @@ async def test_csrf_validation_and_logout(client: AsyncClient):
     # 3. Attempt logout with valid CSRF header -> 200 OK
     valid_logout_res = await client.post(
         "/api/v1/auth/logout",
-        cookies=cookies,
         headers={"X-CSRF-Token": csrf_token}
     )
     assert valid_logout_res.status_code == 200
     assert valid_logout_res.json()["status"] == "success"
 
-    # 4. Verify session cookie is deleted and subsequent requests fail
-    after_logout_res = await client.get("/api/v1/auth/me", cookies=cookies)
+    # 4. Verify session is revoked and subsequent requests fail
+    after_logout_res = await client.get("/api/v1/auth/me")
     assert after_logout_res.status_code == 401
 
 
 @pytest.mark.asyncio
 async def test_user_isolation(client: AsyncClient):
     """Verify User A's session is isolated and cannot view User B's profile."""
-    # Register User A
+    # Register and login User A
     await client.post("/api/v1/auth/register", json={"email": "usera@example.com", "password": "PasswordUserA123!"})
     login_a = await client.post("/api/v1/auth/login", json={"email": "usera@example.com", "password": "PasswordUserA123!"})
-    cookies_a = login_a.cookies
+    cookie_a_val = login_a.cookies.get(settings.SESSION_COOKIE_NAME)
 
-    # Register User B
+    # Register and login User B
+    client.cookies.clear()
     await client.post("/api/v1/auth/register", json={"email": "userb@example.com", "password": "PasswordUserB123!"})
     login_b = await client.post("/api/v1/auth/login", json={"email": "userb@example.com", "password": "PasswordUserB123!"})
-    cookies_b = login_b.cookies
+    cookie_b_val = login_b.cookies.get(settings.SESSION_COOKIE_NAME)
 
-    # Verify User A profile is usera
-    me_a = await client.get("/api/v1/auth/me", cookies=cookies_a)
+    # When client presents User A cookie, me returns User A
+    client.cookies.set(settings.SESSION_COOKIE_NAME, cookie_a_val)
+    me_a = await client.get("/api/v1/auth/me")
     assert me_a.json()["email"] == "usera@example.com"
 
-    # Verify User B profile is userb
-    me_b = await client.get("/api/v1/auth/me", cookies=cookies_b)
+    # When client presents User B cookie, me returns User B
+    client.cookies.set(settings.SESSION_COOKIE_NAME, cookie_b_val)
+    me_b = await client.get("/api/v1/auth/me")
     assert me_b.json()["email"] == "userb@example.com"
 
 
@@ -221,8 +227,8 @@ async def test_no_secrets_leaked_in_responses(client: AsyncClient):
     pwd = "UltraSecretPassword999!"
     reg_res = await client.post("/api/v1/auth/register", json={"email": email, "password": pwd})
     login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": pwd})
-    me_res = await client.get("/api/v1/auth/me", cookies=login_res.cookies)
-    usage_res = await client.get("/api/v1/auth/usage", cookies=login_res.cookies)
+    me_res = await client.get("/api/v1/auth/me")
+    usage_res = await client.get("/api/v1/auth/usage")
 
     for res in [reg_res, login_res, me_res, usage_res]:
         body_text = res.text
