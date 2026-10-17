@@ -258,13 +258,17 @@ if __name__ == "__main__":
         key_manager.startup_self_test()
         print("Master Key validation passed.")
     elif args.command == "backup":
-        import getpass
-        pwd = getpass.getpass("Enter backup encryption passphrase (min 10 chars): ")
+        pwd = os.environ.get("CIPHERQ_BACKUP_PASSPHRASE")
+        if not pwd:
+            import getpass
+            pwd = getpass.getpass("Enter backup encryption passphrase (min 10 chars): ")
         key_manager.backup_to_file(args.out, pwd)
         print(f"Backup created at: {args.out}")
     elif args.command == "restore":
-        import getpass
-        pwd = getpass.getpass("Enter backup encryption passphrase: ")
+        pwd = os.environ.get("CIPHERQ_BACKUP_PASSPHRASE")
+        if not pwd:
+            import getpass
+            pwd = getpass.getpass("Enter backup encryption passphrase: ")
         key_manager.restore_from_file(args.file, pwd, overwrite=args.overwrite)
         print("Restored Master Key successfully.")
     else:

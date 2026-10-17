@@ -276,3 +276,51 @@ CREATE TABLE plan_audit_events (
 - **Downgrade Preservation**: Downgrading an account that holds more than 1 GB preserves all existing encrypted files, downloads, and FTS5 keyword searches. New uploads are blocked with HTTP 413 until the user deletes enough files to drop below 1 GB.
 - **Audit Logging**: Every plan modification is durably logged to `plan_audit_events` with timestamp, actor, previous plan, target plan, and reason with zero secrets logged.
 
+---
+
+## 8. Deployment Architecture: Hardened Debian Linux & Arduino UNO Q
+
+### 8.1 Network Perimeter and Reverse Proxy Topology
+In production deployment on Debian 12 (Bookworm) targeting the Arduino UNO Q, CipherQ enforces strict defense-in-depth:
+
+```
+[ LAN Clients ] ---> HTTPS (Port 443) ---> [ Nginx Reverse Proxy ]
+                                                    | (127.0.0.1:8000)
+                                                    v
+                                    [ Systemd Hardened Sandbox ]
+                                    - User: cipherq (unprivileged)
+                                    - MemoryMax: 3000M
+                                    - ProtectSystem: strict
+                                    - ProtectHome: true
+                                    - Uvicorn (workers=1)
+                                            |
+                                    [ Storage Layer (0700/0600) ]
+                                    - /opt/cipherq/data/cipherq.db
+                                    - /opt/cipherq/data/vault/*.cqenc
+                                    - /opt/cipherq/keys/.vault_master.key
+```
+
+1. **Loopback-Only ASGI Server**: Uvicorn is bound strictly to `127.0.0.1:8000`. Plain HTTP is never exposed to the local network interface.
+2. **Streaming AEAD Reverse Proxy Optimization**:
+   - `proxy_request_buffering off;`: Ensures multi-gigabyte client uploads stream directly chunk-by-chunk into the PyNaCl encryption engine, preventing Nginx from spooling temporary upload bodies to `/var/lib/nginx` on the 32GB eMMC flash.
+   - `proxy_buffering off;`: Decrypted download chunks stream directly to the client without intermediate disk or memory buffering.
+3. **Single-Worker Concurrency Architecture (`workers=1`)**:
+   - Uvicorn runs with a single asynchronous worker process.
+   - Guarantees `InFlightQuotaTracker`'s in-memory asyncio locks operate authoritatively without requiring a distributed locking coordinator (such as Redis), maintaining a lightweight memory footprint under 4GB RAM.
+
+### 8.2 Systemd Security Sandboxing
+The `cipherq.service` unit enforces Linux kernel sandboxing:
+- **Least-Privilege Identity**: Runs under dedicated unprivileged system account `cipherq:cipherq` (`/usr/sbin/nologin`).
+- **Filesystem Lockdown**: `ProtectSystem=strict` (mounts `/usr`, `/boot`, `/etc` read-only) and `ProtectHome=true` (denies access to `/home` and `/root`).
+- **Explicit Writable Paths**: Restricted exclusively to `ReadWritePaths=/opt/cipherq/data /opt/cipherq/keys /tmp /var/log/cipherq`.
+- **Capability Dropping**: `NoNewPrivileges=true`, `CapabilityBoundingSet=`, and `AmbientCapabilities=` drop all Linux kernel capabilities.
+- **Resource Limits**: `MemoryHigh=2500M` (initiates proactive page reclaim) and `MemoryMax=3000M` (hard cap protecting the OS and systemd from OOM).
+
+### 8.3 Coordinated Backup and Disaster Recovery Architecture
+To prevent state skew between the relational database and the filesystem vault:
+1. **Atomic SQLite Snapshot**: Uses `sqlite3 "VACUUM INTO '...'"` to generate an atomic, non-blocking, transactionally consistent database snapshot without table locks or corruption risk.
+2. **Argon2id-Wrapped Master KEK**: Master KEK is exported to an encrypted container (`cipherq_kek_backup.enc`) protected by an admin passphrase via `backend.app.core.key_manager backup`.
+3. **Vault Snapshot and Manifest**: Active `.cqenc` vault files are archived and sealed with a SHA-256 integrity manifest (`manifest.sha256`) before bundling into a `0600` tar archive.
+4. **Disaster Recovery**: `restore.sh` validates cryptographic checksums, halts service activity, restores the database, restores KEK after passphrase verification, and re-validates startup reconciliation.
+
+

@@ -3,7 +3,7 @@
 # Virtual environments
 .venv/
 venv/
-env/
+/env/
 
 # Python bytecode & cache
 __pycache__/

@@ -1,0 +1,61 @@
+[Unit]
+Description=CipherQ Personal Vault and AI Service
+Documentation=https://github.com/nimal/cipherq
+After=network.target local-fs.target time-sync.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=cipherq
+Group=cipherq
+WorkingDirectory=/opt/cipherq
+EnvironmentFile=/etc/cipherq/cipherq.env
+ExecStart=/opt/cipherq/.venv/bin/uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --workers 1 --proxy-headers --forwarded-allow-ips=127.0.0.1
+ExecReload=/bin/kill -s HUP $MAINPID
+
+# Process Lifecycle & Restart Policy
+Restart=on-failure
+RestartSec=5s
+RestartPreventExitStatus=127
+TimeoutStopSec=30s
+KillMode=mixed
+
+# Resource Budgets (Hardened for Arduino UNO Q - 4GB RAM, Quad-Core Cortex-A53)
+MemoryHigh=2500M
+MemoryMax=3000M
+CPUQuota=350%
+TasksMax=512
+LimitNOFILE=65536
+
+# Sandboxing and System Hardening
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+NoNewPrivileges=true
+CapabilityBoundingSet=
+AmbientCapabilities=
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=true
+RestrictSUIDSGID=true
+
+# MemoryDenyWriteExecute must be false to allow ONNX Runtime dynamic code generation/ctypes
+MemoryDenyWriteExecute=false
+
+# Filesystem Access Boundaries
+ReadWritePaths=/opt/cipherq/data /opt/cipherq/keys /tmp /var/log/cipherq
+ReadOnlyPaths=/opt/cipherq/backend /opt/cipherq/frontend /opt/cipherq/.venv
+
+# Standard Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=cipherq
+
+[Install]
+WantedBy=multi-user.target
