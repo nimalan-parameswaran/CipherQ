@@ -113,7 +113,8 @@ class CipherQAPIClient {
     if (!res.ok) {
       throw new Error("Failed to list files from vault.");
     }
-    return await res.json();
+    const data = await res.json();
+    return Array.isArray(data) ? data : (data.files || []);
   }
 
   uploadFile(fileObj, onProgress) {
