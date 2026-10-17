@@ -238,3 +238,53 @@ def test_browser_full_e2e_lifecycle(live_server, browser_instance, tmp_path):
     expect(page.locator("text=No encrypted files found in your vault")).to_be_visible()
 
     context.close()
+
+
+def test_browser_invalid_credentials_error_message(live_server, browser_instance):
+    """Verify that incorrect credentials render user-facing error notice in auth modal."""
+    base_url = live_server["base_url"]
+    context = browser_instance.new_context()
+    page = context.new_page()
+
+    page.goto(f"{base_url}/index.html")
+    page.locator("#btn-nav-login").click()
+    expect(page.locator("#auth-modal")).to_be_visible()
+
+    page.fill("#login-email", "nonexistent@example.com")
+    page.fill("#login-password", "WrongPassword123!")
+    page.click("#btn-submit-login")
+
+    expect(page.locator("#auth-alert")).to_be_visible()
+    expect(page.locator("#auth-alert")).to_contain_text("Invalid email or password")
+    context.close()
+
+
+def test_browser_session_expiry_handling(live_server, browser_instance):
+    """Verify that when a session expires or cookie is revoked, protected routes display auth requirement."""
+    base_url = live_server["base_url"]
+    context = browser_instance.new_context()
+    page = context.new_page()
+
+    # Register a temporary user
+    page.goto(f"{base_url}/index.html")
+    page.locator("#btn-nav-register").click()
+    page.fill("#reg-email", "expiry_test@example.com")
+    page.fill("#reg-password", "ValidPass2026!")
+    page.select_option("#reg-plan", "FREE")
+    page.click("#btn-submit-register")
+    expect(page.locator("#user-display")).to_have_text("expiry_test@example.com")
+
+    # Clear all cookies to simulate session expiry
+    context.clear_cookies()
+
+    # Navigate to dashboard
+    page.goto(f"{base_url}/dashboard.html")
+    expect(page.locator("text=Encrypted Vault Locked")).to_be_visible()
+    expect(page.locator("#lock-btn-login")).to_be_visible()
+
+    # Navigate to files
+    page.goto(f"{base_url}/files.html")
+    expect(page.locator("text=Vault Access Restricted")).to_be_visible()
+
+    context.close()
+
