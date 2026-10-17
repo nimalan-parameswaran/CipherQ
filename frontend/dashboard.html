@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dashboard — CipherQ</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2300B4D8'/><text y='70' x='25' font-size='60' font-weight='bold' fill='%230B132B'>Q</text></svg>">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <div class="brand-logo">Q</div>
+        CipherQ
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link">Home</a></li>
+        <li><a href="dashboard.html" class="nav-link active">Dashboard</a></li>
+        <li><a href="files.html" class="nav-link">Vault</a></li>
+        <li><a href="ai-chat.html" class="nav-link">AI Assistant</a></li>
+        <li><a href="pricing.html" class="nav-link">Pricing</a></li>
+      </ul>
+      <div class="nav-actions">
+        <select id="role-selector" class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.85rem; width: auto;">
+          <option value="free">Maya (FREE)</option>
+          <option value="premium">Alex (PREMIUM)</option>
+        </select>
+        <span id="plan-badge" class="badge badge-free">FREE</span>
+      </div>
+    </div>
+  </nav>
+
+  <main class="container">
+    <!-- Header Summary -->
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem; margin-bottom:2rem;">
+      <div>
+        <h1 style="font-size:2rem; font-weight:800;">Welcome back, <span id="user-badge" style="color:var(--accent-cyan);">Maya</span></h1>
+        <p style="color:var(--text-secondary); font-size:0.95rem;">Here is an overview of your private encrypted storage vault.</p>
+      </div>
+      <div>
+        <a href="files.html" class="btn btn-primary">+ Upload Document</a>
+      </div>
+    </div>
+
+    <!-- Metrics Grid -->
+    <div class="grid grid-3" style="margin-bottom:2.5rem;">
+      <!-- Storage Metric Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>📦</span> Storage Usage
+        </div>
+        <div class="progress-bar-container">
+          <div id="storage-meter-fill" class="progress-bar-fill" style="width: 34%;"></div>
+        </div>
+        <div id="storage-text" style="font-size:0.85rem; color:var(--text-secondary); margin-top:0.4rem;">
+          340 MB of 1 GB used (34%)
+        </div>
+      </div>
+
+      <!-- Security Status Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>🛡️</span> Vault Protection
+        </div>
+        <div style="font-size:1.1rem; font-weight:700; color:var(--accent-success); margin-bottom:0.25rem;">
+          AEAD Active (AES-256-GCM)
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-secondary);">
+          Per-file random DEK with authenticated header checks and tamper protection.
+        </p>
+      </div>
+
+      <!-- AI Capability Card -->
+      <div class="card">
+        <div class="card-title">
+          <span>🤖</span> AI Capabilities
+        </div>
+        <div style="font-size:1.1rem; font-weight:700; margin-bottom:0.25rem;">
+          <span id="ai-status-text">SQLite FTS5 Keyword Search</span>
+        </div>
+        <p style="font-size:0.85rem; color:var(--text-secondary);">
+          Switch to Alex (PREMIUM) in the header to activate Semantic Search and local LLM Q&A.
+        </p>
+      </div>
+    </div>
+
+    <!-- Quick Navigation Cards -->
+    <h2 style="font-size:1.4rem; font-weight:700; margin-bottom:1rem;">Vault Actions</h2>
+    <div class="grid grid-2">
+      <div class="card">
+        <h3 class="card-title">📁 File Vault Manager</h3>
+        <p style="color:var(--text-secondary); margin-bottom:1.25rem;">
+          Browse your encrypted documents, stream secure downloads with integrity checks, or trigger the recoverable deletion workflow.
+        </p>
+        <a href="files.html" class="btn btn-outline btn-sm">Open File Vault &rarr;</a>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">💬 On-Demand AI Assistant</h3>
+        <p style="color:var(--text-secondary); margin-bottom:1.25rem;">
+          Ask questions across your indexed research and documents. Responses are generated locally and cite source pages.
+        </p>
+        <a href="ai-chat.html" class="btn btn-outline btn-sm">Launch Assistant &rarr;</a>
+      </div>
+    </div>
+  </main>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <strong>CipherQ</strong> — Private Cloud & Personal AI.
+      </div>
+      <ul class="footer-links">
+        <li><a href="security.html">Security Disclosures</a></li>
+        <li><a href="pricing.html">Plans & Quotas</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
