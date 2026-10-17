@@ -11,7 +11,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent.parent.parent  # D:\Downloads\
 
 class Settings(BaseSettings):
     PROJECT_NAME: str = "CipherQ"
-    VERSION: str = "1.0.0"
+    VERSION: str = "1.0.0-rc1"
     API_V1_STR: str = "/api/v1"
     
     # Storage and Vault Paths
