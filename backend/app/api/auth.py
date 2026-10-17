@@ -186,9 +186,14 @@ async def logout_user(
 
 
 @router.get("/me", response_model=UserResponse)
-async def get_my_profile(current_user: User = Depends(get_current_user)):
-    """Return the profile of the currently authenticated user (no secrets)."""
-    return current_user
+async def get_my_profile(
+    session_and_user=Depends(get_current_session_and_user)
+):
+    """Return the profile of the currently authenticated user (no secrets) and active CSRF token."""
+    session_obj, user = session_and_user
+    user_resp = UserResponse.model_validate(user)
+    user_resp.csrf_token = session_obj.csrf_token
+    return user_resp
 
 
 @router.get("/usage", response_model=UsageResponse)

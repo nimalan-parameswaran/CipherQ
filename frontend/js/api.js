@@ -81,7 +81,11 @@ class CipherQAPIClient {
       if (!res.ok) {
         return null;
       }
-      return await res.json();
+      const data = await res.json();
+      if (data && data.csrf_token) {
+        this.setCSRFToken(data.csrf_token);
+      }
+      return data;
     } catch (e) {
       return null;
     }

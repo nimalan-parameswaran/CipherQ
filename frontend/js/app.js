@@ -313,8 +313,8 @@ async function initFiles(user) {
 
   const fileTableBody = document.getElementById("file-list-body");
   if (fileTableBody) {
-    await renderFileList(fileTableBody);
     setupDropzone();
+    await renderFileList(fileTableBody);
   }
 }
 

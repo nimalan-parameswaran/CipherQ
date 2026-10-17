@@ -142,6 +142,7 @@ def test_browser_full_e2e_lifecycle(live_server, browser_instance, tmp_path):
     # -------------------------------------------------------------
     page.goto(f"{base_url}/files.html")
     expect(page.locator("text=Encrypted File Vault")).to_be_visible()
+    expect(page.locator("text=No encrypted files found in your vault")).to_be_visible()
 
     # Create test document
     test_doc = tmp_path / "maya_confidential_notes.txt"
