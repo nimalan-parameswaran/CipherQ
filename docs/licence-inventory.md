@@ -17,6 +17,8 @@
 | **aiosqlite** | `0.20.0+` | https://github.com/omnilib/aiosqlite | `MIT` | Include MIT copyright notice | Async SQLite interface |
 | **argon2-cffi** | `25.1.0` | https://github.com/hynek/argon2-cffi | `MIT` | Include MIT copyright notice | Password hashing (wraps reference Argon2) |
 | **cryptography** | `46.0.7` | https://github.com/pyca/cryptography | `Apache-2.0` OR `BSD-3-Clause` | Dual-licensed; include Apache-2.0 / BSD notice | OpenSSL / primitives provider |
+| **email-validator** | `2.2.0` | https://github.com/JoshData/python-email-validator | `Unlicense` / `MIT` | Public domain / MIT | Email validation for Pydantic |
+| **dnspython** | `2.9.0` | https://github.com/rthalley/dnspython | `ISC` | Include ISC notice | Transitive dependency for email domain resolution |
 | **Google Tink** | `1.16.1` | https://github.com/tink-crypto/tink-py | `Apache-2.0` | Include Apache 2.0 license notice & copyright | Streaming AEAD candidate (Google) |
 | **PyNaCl** | `1.6.2` | https://github.com/pyca/pynacl | `Apache-2.0` | Include Apache 2.0 notice (wraps libsodium) | Streaming AEAD candidate (PyCA) |
 | **libsodium** | *(bundled via PyNaCl)* | https://github.com/jedisct1/libsodium | `ISC` | Include ISC copyright notice | Underlying C cryptographic library |
