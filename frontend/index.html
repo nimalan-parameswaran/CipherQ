@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CipherQ — Your Private Cloud. Your Personal AI.</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='20' fill='%2300B4D8'/><text y='70' x='25' font-size='60' font-weight='bold' fill='%230B132B'>Q</text></svg>">
+</head>
+<body>
+
+  <!-- Navigation -->
+  <nav class="navbar">
+    <div class="nav-container">
+      <a href="index.html" class="brand">
+        <div class="brand-logo">Q</div>
+        CipherQ
+      </a>
+      <ul class="nav-links">
+        <li><a href="index.html" class="nav-link active">Home</a></li>
+        <li><a href="files.html" class="nav-link">Vault</a></li>
+        <li><a href="ai-chat.html" class="nav-link">AI Assistant</a></li>
+        <li><a href="pricing.html" class="nav-link">Pricing</a></li>
+        <li><a href="security.html" class="nav-link">Security & Privacy</a></li>
+      </ul>
+      <div class="nav-actions">
+        <!-- Test Account Switcher for Demo -->
+        <select id="role-selector" class="form-control" style="padding: 0.35rem 0.6rem; font-size: 0.85rem; width: auto;">
+          <option value="free">Test User: Maya (FREE)</option>
+          <option value="premium">Test User: Alex (PREMIUM)</option>
+        </select>
+        <a href="dashboard.html" class="btn btn-primary btn-sm">Dashboard</a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header class="container hero">
+    <span class="hero-tagline">Private Cloud on Arduino UNO Q</span>
+    <h1 class="hero-title">Your Private Cloud.<br>Your Personal AI.</h1>
+    <p class="hero-subtitle">
+      A resource-conscious personal file vault with authenticated encryption at rest and on-demand local AI document search. No third-party clouds. No external AI APIs.
+    </p>
+    <div class="hero-buttons">
+      <a href="dashboard.html" class="btn btn-primary">Open My Vault</a>
+      <a href="security.html" class="btn btn-outline">Read Security Disclosures</a>
+    </div>
+  </header>
+
+  <!-- Feature Grid -->
+  <section class="container">
+    <div class="grid grid-3">
+      <div class="card">
+        <div class="card-title">
+          <span style="color:var(--accent-cyan); font-size:1.5rem;">🔒</span>
+          Authenticated Encryption
+        </div>
+        <p style="color:var(--text-secondary); font-size:0.95rem;">
+          Every file is encrypted with a random 256-bit Data Encryption Key (DEK) wrapped under a server Master Key using vetted streaming AEAD.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span style="color:var(--accent-cyan); font-size:1.5rem;">🧠</span>
+          On-Demand Local AI
+        </div>
+        <p style="color:var(--text-secondary); font-size:0.95rem;">
+          Semantic document retrieval and Q&A run strictly on local hardware. Zero document contents are ever transmitted to external AI APIs.
+        </p>
+      </div>
+
+      <div class="card">
+        <div class="card-title">
+          <span style="color:var(--accent-cyan); font-size:1.5rem;">⚡</span>
+          Engineered for 4GB RAM
+        </div>
+        <p style="color:var(--text-secondary); font-size:0.95rem;">
+          Optimized for Arduino UNO Q (Debian Linux). Streaming I/O caps transfer memory to under 1MB; intelligent guards prevent OOM crashes.
+        </p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Honest Security Model Callout -->
+  <section class="container" style="margin-top: 2rem;">
+    <div class="card" style="border-left: 4px solid var(--accent-cyan);">
+      <h3 style="color:#fff; margin-bottom: 0.5rem; display:flex; align-items:center; gap:0.5rem;">
+        <span>🛡️</span> Transparent Security Disclosures
+      </h3>
+      <p style="color:var(--text-secondary); font-size: 0.95rem;">
+        CipherQ is a <strong>server-managed encrypted vault</strong>, not an end-to-end encrypted (E2EE) zero-knowledge platform. Because local AI processing and downloads require in-memory decryption, the server holds the Master Key. We do not make false claims of zero-knowledge or absolute forensic memory wiping.
+      </p>
+      <div style="margin-top: 1rem;">
+        <a href="security.html" style="font-weight:600; font-size:0.9rem;">Review our complete Threat Model & Security Boundaries &rarr;</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Pricing Preview -->
+  <section class="container" style="margin-top: 3rem; text-align:center;">
+    <h2 style="font-size:2rem; font-weight:800; margin-bottom:0.75rem;">Simple, Predictable Plans</h2>
+    <p style="color:var(--text-secondary); margin-bottom:2rem;">Identical cryptographic protections across both tiers. Upgrade only for capacity and AI.</p>
+    
+    <div class="grid grid-2" style="max-width: 900px; margin: 0 auto; text-align:left;">
+      <!-- Free Card -->
+      <div class="card">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:1.4rem;">FREE</h3>
+          <span class="badge badge-free">Included</span>
+        </div>
+        <div style="font-size:2rem; font-weight:800; margin:1rem 0;">1 GB <span style="font-size:1rem; font-weight:400; color:var(--text-muted);">Storage</span></div>
+        <ul style="list-style:none; line-height:2; color:var(--text-secondary); margin-bottom:1.5rem;">
+          <li>✓ Vetted Streaming AEAD Encryption</li>
+          <li>✓ Per-file DEK with Integrity Check</li>
+          <li>✓ Fast SQLite FTS5 Keyword Search</li>
+          <li>✓ Recoverable Deletion Workflow</li>
+          <li>✗ Local AI Document Q&A</li>
+        </ul>
+        <a href="files.html" class="btn btn-outline" style="width:100%;">Use Free Vault</a>
+      </div>
+
+      <!-- Premium Card -->
+      <div class="card" style="border-color: var(--accent-cyan); box-shadow: var(--shadow-glow);">
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <h3 style="font-size:1.4rem;">PREMIUM</h3>
+          <span class="badge badge-premium">Full AI Power</span>
+        </div>
+        <div style="font-size:2rem; font-weight:800; margin:1rem 0;">5 GB <span style="font-size:1rem; font-weight:400; color:var(--text-muted);">Storage</span></div>
+        <ul style="list-style:none; line-height:2; color:var(--text-secondary); margin-bottom:1.5rem;">
+          <li>✓ Vetted Streaming AEAD Encryption</li>
+          <li>✓ Per-file DEK with Integrity Check</li>
+          <li>✓ <strong>Semantic Vector Document Search</strong></li>
+          <li>✓ <strong>Local AI Document Q&A with Citations</strong></li>
+          <li>✓ Priority In-Memory Worker Allocation</li>
+        </ul>
+        <a href="ai-chat.html" class="btn btn-primary" style="width:100%;">Experience AI Assistant</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer class="footer">
+    <div class="footer-content">
+      <div>
+        <strong>CipherQ</strong> — Open-source private cloud & local AI.
+        <div style="font-size:0.8rem; color:var(--text-muted); margin-top:0.25rem;">
+          MIT Licensed. Designed for Arduino UNO Q 4GB.
+        </div>
+      </div>
+      <ul class="footer-links">
+        <li><a href="security.html">Security</a></li>
+        <li><a href="pricing.html">Pricing</a></li>
+        <li><a href="https://github.com/nimalan-parameswaran/CipherQ" target="_blank" rel="noopener">GitHub</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>
