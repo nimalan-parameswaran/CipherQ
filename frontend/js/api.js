@@ -1,128 +1,171 @@
-// CipherQ Frontend API Client (Vanilla ES Module)
-import { MOCK_USERS, MOCK_FILES, MOCK_AI_RESPONSES } from "./mock-data.js";
+// CipherQ Frontend API Client (Connected to Real FastAPI Endpoints)
+// Session tokens are handled strictly via HttpOnly cookies (never stored in client storage).
+// Only the CSRF token is held in sessionStorage for header injection on mutating requests.
 
 class CipherQAPIClient {
   constructor() {
-    this.baseUrl = window.location.origin.includes(":8000") 
-      ? "/api/v1" 
-      : "http://localhost:8000/api/v1";
-    this.useMock = false;
-    this.csrfToken = localStorage.getItem("cipherq_csrf") || "mock_csrf_token_xyz";
-    this.activeUserRole = localStorage.getItem("cipherq_active_role") || "free";
+    // Single-origin default; falls back to current host /api/v1
+    this.baseUrl = "/api/v1";
   }
 
-  setRole(role) {
-    this.activeUserRole = role;
-    localStorage.setItem("cipherq_active_role", role);
+  getCSRFToken() {
+    return sessionStorage.getItem("cipherq_csrf") || "";
   }
 
-  getCurrentMockUser() {
-    return MOCK_USERS[this.activeUserRole] || MOCK_USERS.free;
+  setCSRFToken(token) {
+    if (token) {
+      sessionStorage.setItem("cipherq_csrf", token);
+    } else {
+      sessionStorage.removeItem("cipherq_csrf");
+    }
+  }
+
+  async register(email, password, planType = "FREE") {
+    const res = await fetch(`${this.baseUrl}/auth/register`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password, plan_type: planType })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Registration failed." }));
+      throw new Error(err.detail || "Registration failed.");
+    }
+    return await res.json();
+  }
+
+  async login(email, password) {
+    const res = await fetch(`${this.baseUrl}/auth/login`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email, password })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Invalid email or password." }));
+      throw new Error(err.detail || "Invalid email or password.");
+    }
+    const data = await res.json();
+    this.setCSRFToken(data.csrf_token);
+    return data;
+  }
+
+  async logout() {
+    const csrf = this.getCSRFToken();
+    try {
+      await fetch(`${this.baseUrl}/auth/logout`, {
+        method: "POST",
+        headers: { "X-CSRF-Token": csrf }
+      });
+    } finally {
+      this.setCSRFToken(null);
+    }
   }
 
   async getMe() {
-    try {
-      const res = await fetch(`${this.baseUrl}/auth/me`, {
-        credentials: "include",
-        headers: { "X-CSRF-Token": this.csrfToken }
-      });
-      if (res.ok) return await res.json();
-    } catch {
-      // Backend not running; fallback to mock user for Phase 1
+    const res = await fetch(`${this.baseUrl}/auth/me`, {
+      headers: { "X-CSRF-Token": this.getCSRFToken() }
+    });
+    if (res.status === 401) {
+      return null;
     }
-    return this.getCurrentMockUser();
+    if (!res.ok) {
+      throw new Error("Failed to fetch user profile.");
+    }
+    return await res.json();
+  }
+
+  async getUsage() {
+    const res = await fetch(`${this.baseUrl}/auth/usage`, {
+      headers: { "X-CSRF-Token": this.getCSRFToken() }
+    });
+    if (!res.ok) return null;
+    return await res.json();
   }
 
   async listFiles() {
-    try {
-      const res = await fetch(`${this.baseUrl}/files`, {
-        credentials: "include"
-      });
-      if (res.ok) return await res.json();
-    } catch {
-      // Fallback to mock files
+    const res = await fetch(`${this.baseUrl}/files`, {
+      headers: { "X-CSRF-Token": this.getCSRFToken() }
+    });
+    if (res.status === 401) {
+      return null;
     }
-    const currentUserId = this.getCurrentMockUser().id;
-    return MOCK_FILES.filter(f => f.user_id === currentUserId && f.status !== "DELETED");
+    if (!res.ok) {
+      throw new Error("Failed to list files from vault.");
+    }
+    return await res.json();
   }
 
-  async uploadFile(fileObj, onProgress) {
-    try {
+  uploadFile(fileObj, onProgress) {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      xhr.open("POST", `${this.baseUrl}/files`, true);
+      xhr.setRequestHeader("X-CSRF-Token", this.getCSRFToken());
+
+      if (xhr.upload && onProgress) {
+        xhr.upload.onprogress = (e) => {
+          if (e.lengthComputable) {
+            const percent = Math.round((e.loaded / e.total) * 100);
+            onProgress(percent);
+          }
+        };
+      }
+
+      xhr.onload = () => {
+        if (xhr.status === 201) {
+          try {
+            resolve(JSON.parse(xhr.responseText));
+          } catch (e) {
+            resolve({ success: true });
+          }
+        } else {
+          try {
+            const err = JSON.parse(xhr.responseText);
+            reject(new Error(err.detail || `Upload failed (HTTP ${xhr.status})`));
+          } catch {
+            reject(new Error(`Upload failed with HTTP ${xhr.status}`));
+          }
+        }
+      };
+
+      xhr.onerror = () => reject(new Error("Network connection error during streaming upload."));
+      xhr.onabort = () => reject(new Error("Upload aborted."));
+
       const formData = new FormData();
       formData.append("file", fileObj);
-      const res = await fetch(`${this.baseUrl}/files`, {
-        method: "POST",
-        credentials: "include",
-        headers: { "X-CSRF-Token": this.csrfToken },
-        body: formData
-      });
-      if (res.ok) return await res.json();
-    } catch {
-      // Fallback mock upload
+      xhr.send(formData);
+    });
+  }
+
+  async downloadFile(fileId, filename) {
+    const res = await fetch(`${this.baseUrl}/files/${fileId}/download`);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Download failed." }));
+      throw new Error(err.detail || "Download failed.");
     }
-    // Simulate upload delay
-    if (onProgress) onProgress(100);
-    const mockFile = {
-      id: "fil_" + Math.random().toString(36).substring(2, 10),
-      user_id: this.getCurrentMockUser().id,
-      original_name: fileObj.name,
-      file_size_bytes: fileObj.size,
-      mime_type: fileObj.type || "application/octet-stream",
-      sha256_hash: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      is_indexed: false,
-      status: "ACTIVE",
-      created_at: new Date().toISOString()
-    };
-    MOCK_FILES.unshift(mockFile);
-    return mockFile;
+
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.style.display = "none";
+    a.href = url;
+    a.download = filename || "downloaded_file";
+    document.body.appendChild(a);
+    a.click();
+    setTimeout(() => {
+      window.URL.revokeObjectURL(url);
+      a.remove();
+    }, 1000);
   }
 
   async deleteFile(fileId) {
-    try {
-      const res = await fetch(`${this.baseUrl}/files/${fileId}`, {
-        method: "DELETE",
-        credentials: "include",
-        headers: { "X-CSRF-Token": this.csrfToken }
-      });
-      if (res.ok) return await res.json();
-    } catch {
-      // Fallback mock delete
+    const res = await fetch(`${this.baseUrl}/files/${fileId}`, {
+      method: "DELETE",
+      headers: { "X-CSRF-Token": this.getCSRFToken() }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Deletion failed." }));
+      throw new Error(err.detail || "Deletion failed.");
     }
-    const target = MOCK_FILES.find(f => f.id === fileId);
-    if (target) {
-      target.status = "DELETED";
-    }
-    return { success: true, file_id: fileId, status: "PENDING_DELETION" };
-  }
-
-  async queryAI(prompt) {
-    const user = this.getCurrentMockUser();
-    if (user.plan_type === "FREE") {
-      // Free users only have keyword search
-      return {
-        error: "AI Document Q&A requires the PREMIUM tier. Free tier is restricted to keyword search.",
-        upgrade_required: true
-      };
-    }
-
-    try {
-      const res = await fetch(`${this.baseUrl}/ai/chat`, {
-        method: "POST",
-        credentials: "include",
-        headers: {
-          "Content-Type": "application/json",
-          "X-CSRF-Token": this.csrfToken
-        },
-        body: JSON.stringify({ prompt })
-      });
-      if (res.ok) return await res.json();
-    } catch {
-      // Fallback mock response
-    }
-    
-    // Return mock cited answer
-    const match = MOCK_AI_RESPONSES.find(r => prompt.toLowerCase().includes("memory") || prompt.toLowerCase().includes("linux")) || MOCK_AI_RESPONSES[0];
-    return match;
+    return await res.json();
   }
 }
 
