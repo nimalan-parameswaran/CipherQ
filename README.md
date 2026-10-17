@@ -116,7 +116,7 @@ CipherQ/
 │   │   ├── services/        # Vault streaming AEAD, AI extractor, embedding, search
 │   │   └── main.py          # FastAPI application entry point & lifespan hooks
 │   ├── requirements.txt     # Pinned Python dependencies
-│   └── tests/               # Pytest suite (53 unit, integration, and E2E tests)
+│   └── tests/               # Pytest suite (55 unit, integration, and E2E tests)
 ├── deployment/
 │   ├── env/
 │   │   └── .env.example     # Hardened production environment template
@@ -135,7 +135,7 @@ CipherQ/
 │   ├── hardware-readiness.md# Target compatibility & resource budgets for Arduino UNO Q
 │   ├── licence-inventory.md # 100% permissive open-source license audit
 │   ├── PRD.md               # Product Requirements Document
-│   ├── test-results.md      # Pytest execution report (53/53 passed)
+│   ├── test-results.md      # Pytest execution report (55/55 passed)
 │   └── threat-model.md      # STRIDE threat model & risk analysis
 └── frontend/                # Vanilla HTML5 / CSS3 / ES Modules web vault
 ```
@@ -168,7 +168,7 @@ pip install -r backend/requirements.txt
 
 ### 3. Run the Test Suite
 ```bash
-# Execute full automated test suite (53 tests)
+# Execute full automated test suite (55 tests)
 python -m pytest -v
 ```
 

@@ -52,7 +52,7 @@ if [ ${#CIPHERQ_BACKUP_PASSPHRASE} -lt 10 ]; then
     exit 1
 fi
 
-sudo -u cipherq "${INSTALL_DIR}/.venv/bin/python3" -m backend.app.core.key_manager backup --out "${KEK_BACKUP_PATH}"
+sudo -u cipherq env PYTHONPATH="${INSTALL_DIR}" CIPHERQ_BACKUP_PASSPHRASE="${CIPHERQ_BACKUP_PASSPHRASE}" "${INSTALL_DIR}/.venv/bin/python3" -m backend.app.core.key_manager backup --out "${KEK_BACKUP_PATH}"
 echo "Encrypted Master Key backup written."
 
 # 3. Vault Ciphertext Snapshot

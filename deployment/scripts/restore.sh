@@ -55,7 +55,7 @@ if [ -f "${KEK_BACKUP}" ]; then
         read -r -s CIPHERQ_BACKUP_PASSPHRASE
         export CIPHERQ_BACKUP_PASSPHRASE
     fi
-    sudo -u cipherq "${INSTALL_DIR}/.venv/bin/python3" -m backend.app.core.key_manager restore --file "${KEK_BACKUP}" --overwrite
+    sudo -u cipherq env PYTHONPATH="${INSTALL_DIR}" CIPHERQ_BACKUP_PASSPHRASE="${CIPHERQ_BACKUP_PASSPHRASE}" "${INSTALL_DIR}/.venv/bin/python3" -m backend.app.core.key_manager restore --file "${KEK_BACKUP}" --overwrite
     chmod 600 "${INSTALL_DIR}/keys/.vault_master.key"
     echo "Master Key successfully restored and verified with self-test."
 else

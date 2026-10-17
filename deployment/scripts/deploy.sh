@@ -106,13 +106,13 @@ chown -R "${CIPHERQ_USER}:${CIPHERQ_GROUP}" "${INSTALL_DIR}" "${CONFIG_DIR}" "${
 MASTER_KEY="${INSTALL_DIR}/keys/.vault_master.key"
 if [ ! -f "${MASTER_KEY}" ]; then
     echo "Initializing new 256-bit Master Key Encryption Key (KEK)..."
-    sudo -u "${CIPHERQ_USER}" "${INSTALL_DIR}/.venv/bin/python3" -m backend.app.core.key_manager generate
+    sudo -u "${CIPHERQ_USER}" env PYTHONPATH="${INSTALL_DIR}" "${INSTALL_DIR}/.venv/bin/python3" -m backend.app.core.key_manager generate
 fi
 chmod 600 "${MASTER_KEY}"
 
 # Validate Master Key with in-memory self-test
 echo "Running Master Key startup self-test..."
-sudo -u "${CIPHERQ_USER}" "${INSTALL_DIR}/.venv/bin/python3" -m backend.app.core.key_manager validate
+sudo -u "${CIPHERQ_USER}" env PYTHONPATH="${INSTALL_DIR}" "${INSTALL_DIR}/.venv/bin/python3" -m backend.app.core.key_manager validate
 
 echo "=== [6/8] Configuring Systemd Unit ==="
 cp "${REPO_ROOT}/deployment/systemd/cipherq.service" /etc/systemd/system/cipherq.service
