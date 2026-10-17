@@ -345,7 +345,7 @@ async function renderFileList(container) {
       <td>${formatBytes(file.file_size_bytes)}</td>
       <td>
         <span class="badge ${file.is_indexed ? 'badge-success' : 'badge-free'}" id="badge-${file.id}">
-          ${file.is_indexed ? 'AI Indexed' : 'Encrypted Only'}
+          ${file.is_indexed ? 'Encrypted Vault (AI Indexed)' : 'Encrypted Vault'}
         </span>
       </td>
       <td>${new Date(file.created_at).toLocaleDateString()}</td>
@@ -599,47 +599,75 @@ async function initAIChat(user) {
     history.appendChild(userMsg);
     input.value = "";
 
-    // If Free plan, show tier requirement
-    if (user.plan_type !== "PREMIUM") {
-      const botMsg = document.createElement("div");
-      botMsg.className = "card";
-      botMsg.style.marginBottom = "1rem";
-      botMsg.style.borderLeft = "4px solid var(--accent-warning)";
-      botMsg.innerHTML = `
-        <strong style="color:var(--accent-warning);">Plan Restriction Notice:</strong>
-        <p style="margin-top:0.5rem;">Local AI semantic search requires a <strong>PREMIUM</strong> plan. You are currently on the FREE tier (1GB quota, streaming AEAD, keyword search).</p>
-      `;
-      history.appendChild(botMsg);
-      history.scrollTop = history.scrollHeight;
-      return;
-    }
-
-    // Premium plan: show local on-device retrieval response
+    // Loading indicator
     const loadingMsg = document.createElement("div");
     loadingMsg.className = "card";
     loadingMsg.style.marginBottom = "1rem";
-    loadingMsg.innerHTML = `<em style="color:var(--text-muted);">Decrypted documents in RAM & querying local search index...</em>`;
+    loadingMsg.innerHTML = `<em style="color:var(--text-muted);">Querying local on-device search index...</em>`;
     history.appendChild(loadingMsg);
     history.scrollTop = history.scrollHeight;
 
-    setTimeout(() => {
+    try {
+      const result = await api.queryAI(prompt);
       loadingMsg.remove();
+
       const botMsg = document.createElement("div");
       botMsg.className = "card";
       botMsg.style.marginBottom = "1rem";
-      botMsg.style.borderLeft = "4px solid var(--accent-blue)";
-      botMsg.innerHTML = `
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <strong style="color:var(--accent-cyan-light);">CipherQ On-Device AI:</strong>
-          <span class="badge badge-success">Local In-Memory</span>
-        </div>
-        <p style="margin-top:0.75rem;">
-          In-memory semantic search executed across your vault. In Phase 5, quantized onnxruntime embeddings and local LLM generate citations from your decrypted documents.
-        </p>
-      `;
+
+      if (!result.has_sufficient_evidence) {
+        botMsg.style.borderLeft = "4px solid var(--accent-warning)";
+        botMsg.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:var(--accent-warning);">CipherQ Search Engine:</strong>
+            <span class="badge badge-warning">Zero Evidence Found</span>
+          </div>
+          <p style="margin-top:0.75rem; color:var(--text-secondary);">${result.answer}</p>
+          <p style="font-size:0.85rem; color:var(--text-muted); margin-top:0.5rem;">
+            Tip: Make sure you have clicked <strong>"⚡ Index for AI"</strong> on your uploaded files in the Vault tab.
+          </p>
+        `;
+      } else {
+        botMsg.style.borderLeft = "4px solid var(--accent-cyan)";
+        const citationsHtml = (result.citations || []).map(c => `
+          <div style="background:rgba(28,37,65,0.6); border:1px solid var(--border-color); border-radius:4px; padding:0.5rem 0.75rem; margin-top:0.5rem; font-size:0.85rem;">
+            <div style="display:flex; justify-content:space-between; align-items:center;">
+              <span style="color:var(--accent-cyan); font-weight:600;">📄 ${c.filename} (Page ${c.page_number})</span>
+              <span class="badge ${c.match_type.includes('SEMANTIC') ? 'badge-premium' : 'badge-free'}">${c.match_type}</span>
+            </div>
+            <div style="color:var(--text-secondary); margin-top:0.25rem; font-style:italic;">"${c.snippet}"</div>
+          </div>
+        `).join("");
+
+        botMsg.innerHTML = `
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <strong style="color:var(--accent-cyan-light);">CipherQ Local Search (${result.mode_used}):</strong>
+            <span class="badge badge-success">Local In-Memory</span>
+          </div>
+          <p style="margin-top:0.75rem; white-space:pre-wrap; line-height:1.6;">${result.answer}</p>
+          <div style="margin-top:1rem; border-top:1px solid rgba(72,202,228,0.1); padding-top:0.5rem;">
+            <small style="color:var(--text-muted); display:block; margin-bottom:0.25rem;">Grounded Source Citations (${result.citations.length}):</small>
+            ${citationsHtml}
+          </div>
+        `;
+      }
+
       history.appendChild(botMsg);
       history.scrollTop = history.scrollHeight;
-    }, 500);
+
+    } catch (err) {
+      loadingMsg.remove();
+      const errorMsg = document.createElement("div");
+      errorMsg.className = "card";
+      errorMsg.style.marginBottom = "1rem";
+      errorMsg.style.borderLeft = "4px solid var(--accent-danger)";
+      errorMsg.innerHTML = `
+        <strong style="color:var(--accent-danger);">Query Error:</strong>
+        <p style="margin-top:0.4rem;">${err.message || "Failed to execute local search."}</p>
+      `;
+      history.appendChild(errorMsg);
+      history.scrollTop = history.scrollHeight;
+    }
   });
 }
 

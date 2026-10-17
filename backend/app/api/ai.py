@@ -70,7 +70,7 @@ async def index_file(
             file_dek = unwrap_dek(file_record.wrapped_dek, master_kek)
 
             plaintext_chunks = []
-            async for chunk in vault_service.decrypt_vault_stream(file_record.storage_name, file_dek):
+            for chunk in vault_service.decrypt_vault_stream(file_record.id, file_record.storage_name, file_dek):
                 plaintext_chunks.append(chunk)
             raw_bytes = b"".join(plaintext_chunks)
         except Exception as e:
