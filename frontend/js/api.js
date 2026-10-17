@@ -61,24 +61,33 @@ class CipherQAPIClient {
   }
 
   async getMe() {
-    const res = await fetch(`${this.baseUrl}/auth/me`, {
-      headers: { "X-CSRF-Token": this.getCSRFToken() }
-    });
-    if (res.status === 401) {
+    try {
+      const res = await fetch(`${this.baseUrl}/auth/me`, {
+        headers: { "X-CSRF-Token": this.getCSRFToken() }
+      });
+      if (res.status === 401) {
+        this.setCSRFToken(null);
+        return null;
+      }
+      if (!res.ok) {
+        return null;
+      }
+      return await res.json();
+    } catch (e) {
       return null;
     }
-    if (!res.ok) {
-      throw new Error("Failed to fetch user profile.");
-    }
-    return await res.json();
   }
 
   async getUsage() {
-    const res = await fetch(`${this.baseUrl}/auth/usage`, {
-      headers: { "X-CSRF-Token": this.getCSRFToken() }
-    });
-    if (!res.ok) return null;
-    return await res.json();
+    try {
+      const res = await fetch(`${this.baseUrl}/auth/usage`, {
+        headers: { "X-CSRF-Token": this.getCSRFToken() }
+      });
+      if (!res.ok) return null;
+      return await res.json();
+    } catch (e) {
+      return null;
+    }
   }
 
   async listFiles() {
