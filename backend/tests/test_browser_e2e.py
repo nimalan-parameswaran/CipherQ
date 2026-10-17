@@ -91,6 +91,9 @@ def test_browser_full_e2e_lifecycle(live_server, browser_instance, tmp_path):
     context = browser_instance.new_context(accept_downloads=True)
     page = context.new_page()
 
+    page.on("console", lambda msg: print(f"\n[BROWSER CONSOLE {msg.type}]: {msg.text}"))
+    page.on("pageerror", lambda err: print(f"\n[BROWSER ERROR]: {err}"))
+
     # -------------------------------------------------------------
     # 1. Unauthenticated Access Control Checks
     # -------------------------------------------------------------
