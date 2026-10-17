@@ -136,15 +136,43 @@ Onboard eMMC 5.1 storage must balance operating system requirements, application
 
 ---
 
-## 7. Next Steps for Physical Hardware Onboarding
+---
 
-When an Arduino UNO Q device is physically connected and accessible via SSH:
-1. Copy the repository or clone to the device:
+## 7. Arduino UNO Q Physical Hardware Execution Checklist
+
+This checklist tracks validation tasks to be executed directly on the physical Arduino UNO Q board once hardware is attached.
+
+> [!IMPORTANT]
+> **Hardware Status Declaration**:
+> Because the physical Arduino UNO Q is not attached to this development environment, all on-device hardware tests are marked **NOT TESTED (PENDING HARDWARE RUN)**. No on-device results are fabricated.
+
+| Verification Item | Scope & Acceptance Criteria | Target Architecture | Execution Status | Notes / Blockers |
+| :--- | :--- | :--- | :--- | :--- |
+| **1. OS & Architecture Detection** | Kernel `6.x`, Debian 12 Bookworm, `aarch64` / Cortex-A53 | Arduino UNO Q | **NOT TESTED** | Blocked on physical device attachment |
+| **2. Python Runtime & Wheels** | CPython 3.11+, native `aarch64` wheels for `pynacl`, `argon2-cffi`, `onnxruntime` | Arduino UNO Q | **NOT TESTED** | Package specs verified on PyPI; on-device pip install pending |
+| **3. Automated deploy.sh Execution** | Unprivileged `cipherq` user, directory layout (`0700`/`0600`), venv installation | Arduino UNO Q | **NOT TESTED** | Script written and reviewed |
+| **4. Systemd Sandboxing & Boot** | `cipherq.service` active without capability leaks (`MemoryMax=3000M`) | Arduino UNO Q | **NOT TESTED** | Unit file written and reviewed |
+| **5. Nginx TLS & Streaming** | TLS handshake, `proxy_request_buffering off` verified with zero eMMC spooling | Arduino UNO Q | **NOT TESTED** | Config written and reviewed |
+| **6. Vault Upload & Decryption** | Live HTTP upload/download of 100MB file with bit-exact SHA-256 match | Arduino UNO Q | **NOT TESTED** | Verified on Windows x86_64; pending on-device test |
+| **7. Multi-User Vault Isolation** | Two accounts created; cross-user file listing and downloading blocked | Arduino UNO Q | **NOT TESTED** | Verified on Windows x86_64; pending on-device test |
+| **8. Quota & Headroom Safety** | Per-user 1GB/5GB caps + host `MIN_FREE_DISK_BYTES` rejection (HTTP 507) | Arduino UNO Q | **NOT TESTED** | Verified on Windows x86_64; pending on-device test |
+| **9. Local AI Indexing & Search** | SQLite FTS5 search (<10ms) + ONNX 384-dim vector similarity ranking | Arduino UNO Q | **NOT TESTED** | Verified on Windows x86_64; pending on-device test |
+| **10. Concurrency & Memory Cap** | 2 concurrent streaming transfers under 3000MB cgroup ceiling | Arduino UNO Q | **NOT TESTED** | Verified on Windows x86_64; pending on-device test |
+| **11. Thermal & Sustained Load** | Temperature monitoring during sustained 500MB stream; throttling checks | Arduino UNO Q | **NOT TESTED** | Requires physical device thermal sensor |
+| **12. Restart Reconciliation** | Unlinking stale `.tmp` files, orphan quarantining, and usage sum verification | Arduino UNO Q | **NOT TESTED** | Verified on Windows x86_64; pending on-device test |
+| **13. Atomic Backup & Restore** | `backup.sh` (SQLite VACUUM + KEK export) and `restore.sh` disaster recovery | Arduino UNO Q | **NOT TESTED** | Verified on Windows x86_64; pending on-device test |
+
+---
+
+## 8. On-Device Runbook When Physical Hardware Is Attached
+
+1. Connect to the device via SSH:
    ```bash
-   git clone <repo-url> /tmp/cipherq
+   ssh debian@cipherq.local
    ```
-2. Execute the automated deployment script:
+2. Clone repository and run automated deployment:
    ```bash
+   git clone https://github.com/nimal/cipherq.git /tmp/cipherq
    cd /tmp/cipherq && sudo bash deployment/scripts/deploy.sh
    ```
 3. Run the regression test suite natively on ARM64:
@@ -153,6 +181,7 @@ When an Arduino UNO Q device is physically connected and accessible via SSH:
    ```
 4. Run memory and streaming throughput benchmarks:
    ```bash
-   sudo -u cipherq /opt/cipherq/.venv/bin/python3 /opt/cipherq/backend/tests/benchmark_memory.py
+   sudo -u cipherq /opt/cipherq/.venv/bin/python3 /opt/cipherq/backend/tests/benchmark_browser_load.py
+   sudo -u cipherq /opt/cipherq/.venv/bin/python3 /opt/cipherq/backend/tests/benchmark_ai_engine.py
    ```
-5. Record empirical measurements in `docs/benchmark-results.md`.
+5. Update checklist items from **NOT TESTED** to **PASS** or **FAIL** based on empirical on-device results.

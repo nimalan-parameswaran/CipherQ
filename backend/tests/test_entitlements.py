@@ -472,3 +472,57 @@ async def test_cli_manage_plan(client: AsyncClient, test_db_session):
     assert audit.new_plan == "PREMIUM"
     assert audit.reason == "terminal_admin_action"
 
+
+@pytest.mark.asyncio
+async def test_global_disk_space_safety_reserve_rejected(client: AsyncClient):
+    """Verify that uploads are rejected with HTTP 507 when host disk space drops below safety reserve."""
+    from unittest.mock import patch
+    from collections import namedtuple
+    from backend.app.services.entitlements import DiskSpaceExhaustedError
+
+    DiskUsage = namedtuple("DiskUsage", ["total", "used", "free"])
+
+    # Register and login user
+    email = "disk_test@example.com"
+    await client.post("/api/v1/auth/register", json={"email": email, "password": "Password2026!", "plan_type": "FREE"})
+    login_res = await client.post("/api/v1/auth/login", json={"email": email, "password": "Password2026!"})
+    csrf_token = login_res.json()["csrf_token"]
+
+    # Mock disk_usage to return 5 MB free (less than settings.MIN_FREE_DISK_BYTES)
+    mock_stat = DiskUsage(total=32_000_000_000, used=31_995_000_000, free=5_000_000)
+
+    with patch("shutil.disk_usage", return_value=mock_stat):
+        res = await client.post(
+            "/api/v1/files",
+            files={"file": ("test.txt", b"Safety reserve test content", "text/plain")},
+            headers={"X-CSRF-Token": csrf_token}
+        )
+        assert res.status_code == 507
+        assert "storage headroom safety reserve reached" in res.json()["detail"].lower()
+
+
+@pytest.mark.asyncio
+async def test_global_in_flight_tracking_lifecycle():
+    """Verify that InFlightQuotaTracker tracks global aggregate in-flight bytes across users."""
+    from backend.app.services.entitlements import InFlightQuotaTracker
+
+    tracker = InFlightQuotaTracker()
+    assert tracker.get_global_in_flight_bytes() == 0
+
+    async with tracker.track_upload(user_id="user_1", current_committed_bytes=0, quota_bytes=10_000_000, content_length=5_000_000):
+        assert tracker.get_in_flight_bytes("user_1") == 5_000_000
+        assert tracker.get_global_in_flight_bytes() == 5_000_000
+
+        async with tracker.track_upload(user_id="user_2", current_committed_bytes=0, quota_bytes=10_000_000, content_length=2_000_000):
+            assert tracker.get_in_flight_bytes("user_2") == 2_000_000
+            assert tracker.get_global_in_flight_bytes() == 7_000_000
+
+        # After user_2 completes, global in-flight decrements to 5,000,000
+        assert tracker.get_in_flight_bytes("user_2") == 0
+        assert tracker.get_global_in_flight_bytes() == 5_000_000
+
+    # After user_1 completes, global in-flight returns to 0
+    assert tracker.get_in_flight_bytes("user_1") == 0
+    assert tracker.get_global_in_flight_bytes() == 0
+
+

@@ -284,7 +284,7 @@ async function initPricing(user) {
   const toggleBtn = document.getElementById("btn-toggle-plan");
   if (toggleBtn) {
     toggleBtn.addEventListener("click", async () => {
-      const adminToken = prompt(`Enter Development Admin Token to change ${user.email} to ${targetPlan}:`, "cipherq-dev-admin-secret-2026");
+      const adminToken = prompt(`Enter Administrative Token to change ${user.email} to ${targetPlan}:`);
       if (!adminToken) return;
 
       const alertBox = document.getElementById("plan-change-alert");

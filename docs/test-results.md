@@ -8,11 +8,11 @@
 - **Target OS / Environment**: Windows 11 Home 64-bit (Build 26100)
 - **Python Version**: CPython 3.13.7 (64-bit)
 - **Test Runner**: Pytest 8.3.5 (Plugins: `anyio-4.15.1`, `asyncio-0.25.3`)
-- **Total Test Cases**: **53**
-- **Passed**: **53 (100%)**
+- **Total Test Cases**: **55**
+- **Passed**: **55 (100%)**
 - **Failed**: **0 (0%)**
 - **Skipped / XFailed**: **0**
-- **Execution Duration**: **19.55 seconds**
+- **Execution Duration**: **19.37 seconds**
 
 ---
 
@@ -24,18 +24,18 @@ platform win32 -- Python 3.13.7, pytest-8.3.5, pluggy-1.7.0
 rootdir: D:\Downloads\CipherQ
 plugins: anyio-4.15.1, asyncio-0.25.3
 asyncio: mode=Mode.STRICT, asyncio_default_fixture_loop_scope=None
-collected 53 items
+collected 55 items
 
-backend\tests\test_ai_engine.py .......                                  [ 13%]
-backend\tests\test_auth_api.py ..........                                [ 32%]
-backend\tests\test_browser_e2e.py ...                                    [ 37%]
-backend\tests\test_entitlements.py ...........                           [ 58%]
-backend\tests\test_files_api.py .....                                    [ 67%]
-backend\tests\test_key_manager.py ......                                 [ 79%]
-backend\tests\test_security.py ....                                      [ 86%]
+backend\tests\test_ai_engine.py .......                                  [ 12%]
+backend\tests\test_auth_api.py ..........                                [ 30%]
+backend\tests\test_browser_e2e.py ...                                    [ 36%]
+backend\tests\test_entitlements.py .............                         [ 60%]
+backend\tests\test_files_api.py .....                                    [ 69%]
+backend\tests\test_key_manager.py ......                                 [ 80%]
+backend\tests\test_security.py ....                                      [ 87%]
 backend\tests\test_vault_crypto.py .......                               [100%]
 
-============================= 53 passed in 19.55s =============================
+============================= 55 passed in 19.37s =============================
 ```
 
 ---
@@ -130,6 +130,8 @@ Validates server-enforced decimal storage quotas, in-flight upload concurrency g
 | `test_admin_endpoint_requires_valid_token` | Missing or incorrect `X-Admin-Token` returns HTTP 403 Forbidden | **PASSED** |
 | `test_plan_audit_events_logged` | Plan changes record immutable audit log entries without secret leaks | **PASSED** |
 | `test_semantic_search_requires_premium` | Free user attempting semantic search receives HTTP 403 Forbidden | **PASSED** |
+| `test_global_disk_space_safety_reserve_rejected` | Uploads rejected with HTTP 507 Insufficient Storage when free space drops below safety reserve | **PASSED** |
+| `test_global_in_flight_tracking_lifecycle` | InFlightQuotaTracker tracks aggregate in-flight bytes across multiple users concurrently | **PASSED** |
 
 ---
 

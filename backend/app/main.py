@@ -28,6 +28,14 @@ async def lifespan(app: FastAPI):
     Ensures storage directories exist, database schema is created,
     Master Key passes its self-test, and vault reconciliation executes.
     """
+    # 0. Production Security Sanity Check
+    if settings.ENVIRONMENT.lower() == "production":
+        if settings.ADMIN_TOKEN == "cipherq-dev-admin-secret-2026":
+            raise RuntimeError(
+                "FATAL SECURITY CONFIGURATION: Running in production mode with default development ADMIN_TOKEN! "
+                "Configure a secure 256-bit ADMIN_TOKEN in /etc/cipherq/cipherq.env or environment."
+            )
+
     # 1. Initialize local storage directories
     settings.init_directories()
 

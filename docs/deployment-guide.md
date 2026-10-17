@@ -253,7 +253,63 @@ The restore script will:
 
 ---
 
-## 7. Service Operations, Monitoring, and Health Checks
+## 7. Operational Rollback Procedures
+
+If an upgrade, dependency update, or database restore fails:
+
+### Step 1: Halt Service Activity
+```bash
+sudo systemctl stop cipherq.service
+```
+
+### Step 2: Restore Previous Codebase and Virtual Environment
+If code updates or package dependencies failed:
+```bash
+# If a pre-upgrade backup snapshot directory was created (/opt/cipherq.prev):
+sudo rm -rf /opt/cipherq/backend /opt/cipherq/frontend /opt/cipherq/.venv
+sudo cp -r /opt/cipherq.prev/backend /opt/cipherq/
+sudo cp -r /opt/cipherq.prev/frontend /opt/cipherq/
+sudo cp -r /opt/cipherq.prev/.venv /opt/cipherq/
+```
+
+### Step 3: Rollback Database and Master KEK
+```bash
+# Restore previous known-good database snapshot
+sudo cp /opt/cipherq/backups/latest_good_db.sqlite /opt/cipherq/data/cipherq.db
+sudo chmod 600 /opt/cipherq/data/cipherq.db
+sudo chown cipherq:cipherq /opt/cipherq/data/cipherq.db
+
+# If KEK was modified, restore backup key:
+sudo -u cipherq /opt/cipherq/.venv/bin/python3 -m backend.app.core.key_manager restore --file /opt/cipherq/backups/cipherq_kek_backup.enc --overwrite
+```
+
+### Step 4: Validate and Restart
+```bash
+# Verify Master Key self-test passes
+sudo -u cipherq /opt/cipherq/.venv/bin/python3 -m backend.app.core.key_manager validate
+
+# Restart daemon and verify health
+sudo systemctl start cipherq.service
+curl -s http://127.0.0.1:8000/api/v1/health
+```
+
+---
+
+## 8. Host Storage Safety Limit & Headroom Protection
+
+The Arduino UNO Q's 32GB onboard eMMC is a shared resource between the Linux operating system, package updates, systemd journal logs, SQLite WAL files, and encrypted `.cqenc` vault files.
+
+### Global Storage Protection Mechanism
+- Per-user quotas (1 GB Free / 5 GB Premium) protect against individual abuse, but do not prevent aggregate disk exhaustion when multiple users store files.
+- CipherQ enforces a **Global Host Disk Headroom Safety Limit** via `settings.MIN_FREE_DISK_BYTES` (default: **1,000,000,000 bytes / 1 GB**).
+- **Behavior under Storage Pressure**:
+  - Before writing in-flight uploads and while streaming chunks, `InFlightQuotaTracker` checks actual physical filesystem free space via `shutil.disk_usage`.
+  - If available disk headroom minus active in-flight transfers drops below `MIN_FREE_DISK_BYTES`, new uploads are rejected or paused with **`HTTP 507 Insufficient Storage`**.
+  - This ensures the device never runs out of disk space, preventing flash write stalls, SQLite database corruption, and systemd journal failure.
+
+---
+
+## 9. Service Operations, Monitoring, and Health Checks
 
 ### Check Service Status
 ```bash
@@ -278,17 +334,18 @@ systemd-cgtop
 ```bash
 curl -k https://localhost/api/v1/health
 # Expected JSON Response:
-# {"status":"healthy","project":"CipherQ","version":"1.0.0","master_key_configured":true}
+# {"status":"healthy","project":"CipherQ","version":"1.0.0-rc1","master_key_configured":true}
 ```
 
 ---
 
-## 8. Operational Troubleshooting
+## 10. Operational Troubleshooting
 
 | Symptom | Root Cause | Solution |
 | :--- | :--- | :--- |
 | **`502 Bad Gateway` on Nginx** | Uvicorn is not running or crashed on startup. | Inspect `sudo journalctl -u cipherq.service -n 50`. Check for permission errors on `.vault_master.key` or missing dependencies in `.venv`. |
 | **`Insecure permissions on .vault_master.key`** | Key file permissions are wider than `0600`. | Run `sudo chmod 600 /opt/cipherq/keys/.vault_master.key && sudo chown cipherq:cipherq /opt/cipherq/keys/.vault_master.key`. |
-| **`HTTP 413 Payload Too Large`** | Nginx `client_max_body_size` exceeded. | Verify `deployment/nginx/cipherq.conf` contains `client_max_body_size 5000M;`. Reload Nginx with `sudo systemctl reload nginx`. |
+| **`HTTP 507 Insufficient Storage`** | Host storage has reached safety margin (`MIN_FREE_DISK_BYTES`). | Clean up old backups in `/opt/cipherq/backups/`, rotate systemd logs (`journalctl --vacuum-size=200M`), or mount an external drive for `/opt/cipherq/data/vault`. |
+| **`HTTP 413 Payload Too Large`** | Nginx `client_max_body_size` exceeded or user quota exceeded. | Verify `deployment/nginx/cipherq.conf` contains `client_max_body_size 5000M;`. For user quota, upgrade user plan or delete files. |
 | **Uploads stall or cause high flash wear** | Nginx request buffering is enabled. | Ensure `proxy_request_buffering off;` and `proxy_buffering off;` are declared in `location /` of the Nginx configuration. |
 | **Service killed with `SIGKILL` (Status 9)** | Systemd `MemoryMax=3000M` exceeded. | Check whether an unverified generative LLM was enabled. Ensure only the lightweight ONNX embedding engine is active. |

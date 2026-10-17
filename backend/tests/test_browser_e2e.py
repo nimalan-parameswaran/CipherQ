@@ -40,6 +40,7 @@ def live_server():
     env["KEYS_DIR"] = str(tpath / "keys")
     env["MASTER_KEY_PATH"] = str(tpath / "keys" / ".vault_master.key")
     env["DATABASE_URL"] = f"sqlite+aiosqlite:///{tpath}/data/e2e_test.db"
+    env["MIN_FREE_DISK_BYTES"] = "10485760"  # 10 MB test safety headroom
 
     cmd = [
         sys.executable, "-m", "uvicorn", "backend.app.main:app",

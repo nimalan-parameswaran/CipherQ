@@ -13,6 +13,8 @@ class Settings(BaseSettings):
     PROJECT_NAME: str = "CipherQ"
     VERSION: str = "1.0.0-rc1"
     API_V1_STR: str = "/api/v1"
+    ENVIRONMENT: str = "development"
+    MIN_FREE_DISK_BYTES: int = 1_000_000_000  # 1 GB host storage safety margin for OS, logs, SQLite WAL
     
     # Storage and Vault Paths
     DATA_DIR: Path = BASE_DIR / "data"

@@ -26,6 +26,15 @@ def reset_rate_limiter():
     rate_limiter.reset()
 
 
+@pytest.fixture(autouse=True)
+def configure_test_disk_safety():
+    """Configure low disk safety reserve (10 MB) during tests to accommodate tight CI/dev environments."""
+    orig = settings.MIN_FREE_DISK_BYTES
+    settings.MIN_FREE_DISK_BYTES = 10_485_760  # 10 MB
+    yield
+    settings.MIN_FREE_DISK_BYTES = orig
+
+
 @pytest.fixture
 def temp_dir():
     """Provide an isolated temporary directory for test storage and keys."""

@@ -78,3 +78,21 @@
 | **Denial of Service** | Concurrent upload race condition: Attacker fires parallel uploads to exceed storage quota | Unbounded physical disk exhaustion beyond quota cap | `InFlightQuotaTracker` reserves streaming quota across concurrent requests; commit-time atomic transaction re-checks usage; rejects overages with HTTP 413. |
 | **Denial of Service** | Usage drift after interrupted uploads, crashes, or aborted deletions | Artificial quota starvation or under-accounting | `reconcile_startup_vault` authoritative recalculation sums active files on startup; `.tmp` files older than 1h unlinked; failed tasks retried via `cleanup_queue`. |
 
+---
+
+## 4. Consolidated Known-Limitations and Security-Risk Register
+
+This register consolidates all known architectural limitations, assumptions, and residual security risks for CipherQ v1.0.0-rc1:
+
+| Risk ID | Risk Description | Severity | Attack Preconditions | Implemented Mitigation | Residual Risk & Operational Guidance |
+| :--- | :--- | :---: | :--- | :--- | :--- |
+| **RISK-01** | **Physical Device Theft / Flash Chip Removal** | **HIGH** | Attacker has physical possession of Arduino UNO Q hardware. | Encrypted `.cqenc` vault files and wrapped DEKs prevent immediate file access. | **RESIDUAL RISK**: Master KEK resides in `/opt/cipherq/keys/.vault_master.key`. Without full-disk encryption (LUKS), physical chip dump allows key extraction. Recommend OS-level LUKS on eMMC. |
+| **RISK-02** | **Irrecoverable KEK Loss** | **CRITICAL** | Storage failure, corrupt flash, or unbacked-up device reflash. | Coordinated `backup.sh` exports password-protected Argon2id-wrapped KEK container. | **RESIDUAL RISK**: If `.vault_master.key` is lost and no encrypted backup exists, all vault ciphertext is mathematically impossible to recover. |
+| **RISK-03** | **Volatile Memory Plaintext Remanence** | **MEDIUM** | Root compromise, memory bus inspection, or unencrypted swap analysis. | Decrypted plaintext exists strictly in volatile RAM; buffers explicitly closed (`del buf`, `gc.collect()`). Zero disk scratch files. | **RESIDUAL RISK**: CPython managed heap does not guarantee zeroed memory pages. Disable OS swap or use encrypted swap (`cryptswap`). |
+| **RISK-04** | **NAND Flash Wear-Leveling Remanence** | **MEDIUM** | Physical flash memory analysis following file deletion. | Two-phase cleanup unlinks `.cqenc` and purges AI chunks from SQLite database. | **RESIDUAL RISK**: eMMC Flash Translation Layer (FTL) remaps physical blocks. Logical deletion does not zero physical NAND cells. |
+| **RISK-05** | **LAN Cleartext Eavesdropping** | **HIGH** | Client connects to CipherQ over unencrypted Wi-Fi/LAN via plain HTTP. | Production architecture mandates Nginx reverse proxy with TLS (port 443) and 301 HTTP redirect on port 80. | **RESIDUAL RISK**: If user bypasses Nginx and binds FastAPI directly to `0.0.0.0:8000`, session cookies and credentials are exposed on LAN. Uvicorn bound strictly to `127.0.0.1`. |
+| **RISK-06** | **Multi-Worker In-Memory Quota Race** | **MEDIUM** | Administrator configures Uvicorn with `--workers > 1`. | Uvicorn pinned to `--workers 1` in systemd unit. In-memory `InFlightQuotaTracker` operates authoritatively. | **RESIDUAL RISK**: Running multiple worker processes bypasses in-memory locks. Multi-process clustering requires distributed locking (e.g. Redis). |
+| **RISK-07** | **Host Storage Headroom Exhaustion** | **HIGH** | Multiple users upload files concurrently, filling the 32GB eMMC flash. | `MIN_FREE_DISK_BYTES` (1 GB reserve) actively checked before and during uploads; rejects overages with HTTP 507. | **RESIDUAL RISK**: External OS writes (large apt upgrades, unrotated systemd journal) can consume disk outside CipherQ's awareness. |
+| **RISK-08** | **Default Admin Token in Production** | **HIGH** | Administrator deploys application with unchanged default dev token. | Startup check fast-fails in production mode if default token is detected. Default token removed from UI prompts. | **RESIDUAL RISK**: Weak or leaked administrator tokens allow unauthorized subscription modifications. Enforce `openssl rand -hex 32`. |
+
+

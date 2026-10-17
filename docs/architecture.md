@@ -323,4 +323,11 @@ To prevent state skew between the relational database and the filesystem vault:
 3. **Vault Snapshot and Manifest**: Active `.cqenc` vault files are archived and sealed with a SHA-256 integrity manifest (`manifest.sha256`) before bundling into a `0600` tar archive.
 4. **Disaster Recovery**: `restore.sh` validates cryptographic checksums, halts service activity, restores the database, restores KEK after passphrase verification, and re-validates startup reconciliation.
 
+### 8.4 Global Storage Safety Margin & Host Headroom Protection
+To protect embedded single-board computers from root partition exhaustion:
+1. **Host Headroom Reserve (`MIN_FREE_DISK_BYTES`)**: In addition to per-user quotas (1 GB Free / 5 GB Premium), CipherQ enforces a global safety reserve (default: 1 GB) on the vault partition.
+2. **Pre-Allocation & Chunk-Time Verification**: `InFlightQuotaTracker` checks available host filesystem space via `shutil.disk_usage` before accepting an upload and while streaming 64 KB chunks.
+3. **Graceful Rejection**: If host free space drops below the safety margin, new writes are halted with `HTTP 507 Insufficient Storage`, protecting the operating system, journal logs, and SQLite write-ahead log (WAL) from disk full crashes.
+
+
 

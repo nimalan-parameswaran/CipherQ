@@ -1,7 +1,7 @@
 # CipherQ — Your Private Cloud. Your Personal AI.
 
 [![Version](https://img.shields.io/badge/version-1.0.0--rc1-blue.svg)](https://github.com/nimal/cipherq)
-[![Tests](https://img.shields.io/badge/tests-53%20passed%20%28100%25%29-brightgreen.svg)](docs/test-results.md)
+[![Tests](https://img.shields.io/badge/tests-55%20passed%20%28100%25%29-brightgreen.svg)](docs/test-results.md)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](backend/requirements.txt)
 [![License](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Debian%2012%20(aarch64)%20%7C%20Windows%2011-lightgrey.svg)](docs/hardware-readiness.md)
@@ -83,6 +83,7 @@ flowchart TD
 - **Concurrency-Safe In-Flight Tracking**: `InFlightQuotaTracker` reserves space during uploads to prevent concurrent upload races from exceeding storage limits.
 - **Atomic Commit-Time Re-Check**: Final database transactions re-verify aggregate storage at commit time to prevent race conditions.
 - **Durable Startup Reconciliation**: Recalculates exact physical vault ciphertext usage on server boot, eliminating negative or stale usage counts.
+- **Global Host Storage Safety Limit**: Enforces a 1 GB host safety reserve (`MIN_FREE_DISK_BYTES`) rejecting uploads with `HTTP 507 Insufficient Storage` when device headroom drops below the safety margin, preventing eMMC disk full crashes.
 - **Admin Management & Audit Logging**: Protected admin API (`X-Admin-Token`) and CLI tool for plan upgrades and downgrades, with immutable audit event logging.
 - **Downgrade Preservation**: Downgrading an account that holds more than 1 GB preserves all existing files, downloads, and search capabilities, while blocking new uploads until usage drops below 1 GB.
 

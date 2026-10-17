@@ -26,7 +26,8 @@ from backend.app.services.vault import (
 )
 from backend.app.services.entitlements import (
     entitlement_service,
-    QuotaExceededError as EntitlementQuotaExceeded
+    QuotaExceededError as EntitlementQuotaExceeded,
+    DiskSpaceExhaustedError
 )
 
 router = APIRouter(prefix="/files", tags=["Files"])
@@ -93,6 +94,11 @@ async def upload_file(
     except (QuotaExceededError, EntitlementQuotaExceeded) as e:
         raise HTTPException(
             status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=str(e)
+        )
+    except DiskSpaceExhaustedError as e:
+        raise HTTPException(
+            status_code=status.HTTP_507_INSUFFICIENT_STORAGE,
             detail=str(e)
         )
     except Exception as e:
