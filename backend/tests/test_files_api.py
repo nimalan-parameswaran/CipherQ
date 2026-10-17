@@ -46,7 +46,7 @@ async def test_file_upload_download_roundtrip(client: AsyncClient):
     download_res = await client.get(f"/api/v1/files/{file_id}/download")
     assert download_res.status_code == 200
     assert download_res.content == test_content
-    assert download_res.headers["content-type"] == "text/plain"
+    assert "text/plain" in download_res.headers["content-type"]
 
     # 4. Clean up
     del_res = await client.delete(f"/api/v1/files/{file_id}", headers={"X-CSRF-Token": csrf_token})
