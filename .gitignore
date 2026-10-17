@@ -1,0 +1,35 @@
+# CipherQ Git Ignore Rules
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Python bytecode & cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.pytest_cache/
+.coverage
+htmlcov/
+
+# Local databases and vaults
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Cryptographic Keys & Secrets (CRITICAL)
+keys/
+*.key
+*.enc
+.vault_master.key
+cipherq_kek_backup.enc
+.env
+.env.*
+!.env.example
+
+# Temporary staging and scratch files
+*.tmp
+*.log
+vault/orphans/
