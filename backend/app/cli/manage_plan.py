@@ -13,7 +13,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent.parent.parent))
 
 from sqlalchemy.future import select
-from backend.app.db.session import session_factory
+from backend.app.db.session import AsyncSessionLocal
 from backend.app.db.models import User, PlanAuditEvent
 from backend.app.services.entitlements import entitlement_service
 
@@ -24,7 +24,7 @@ async def set_user_plan(email: str, new_plan: str, reason: str = "cli_admin_acti
         print(f"Error: Invalid plan '{new_plan}'. Must be FREE or PREMIUM.")
         return 1
 
-    async with session_factory() as db:
+    async with AsyncSessionLocal() as db:
         stmt = select(User).where(User.email == email.strip().lower())
         user = (await db.execute(stmt)).scalar_one_or_none()
 

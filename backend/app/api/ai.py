@@ -219,7 +219,7 @@ async def query_vault_documents(
                     status_code=status.HTTP_403_FORBIDDEN,
                     detail="Semantic vector search requires an active PREMIUM subscription."
                 )
-            hits = await search_service.semantic_vector_search(
+            hits = await search_service.search_semantic(
                 db=db,
                 user_id=current_user.id,
                 query=payload.query,
@@ -227,7 +227,7 @@ async def query_vault_documents(
             )
             mode_used = "SEMANTIC_VECTOR"
         elif requested_mode == "keyword":
-            hits = await search_service.fts5_keyword_search(
+            hits = await search_service.search_fts5(
                 db=db,
                 user_id=current_user.id,
                 query=payload.query,

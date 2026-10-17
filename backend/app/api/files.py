@@ -63,9 +63,8 @@ async def upload_file(
             detail=f"Storage quota exceeded. Your current usage ({current_bytes} bytes) meets or exceeds your {current_user.plan_type} plan quota ({quota_bytes} bytes). Delete files to regain upload capacity."
         )
 
-    # Check client Content-Length if present
-    content_len_header = request.headers.get("content-length")
-    content_len = int(content_len_header) if (content_len_header and content_len_header.isdigit()) else None
+    # Check file size hint if available on UploadFile
+    file_size_hint = getattr(file, "size", None)
 
     file_id = str(uuid.uuid4())
     safe_name = sanitize_filename(file.filename or "untitled")
@@ -82,7 +81,7 @@ async def upload_file(
             user_id=current_user.id,
             current_committed_bytes=current_bytes,
             quota_bytes=quota_bytes,
-            content_length=content_len
+            content_length=file_size_hint
         ):
             remaining_bytes = max(0, quota_bytes - current_bytes)
             storage_name, file_size, sha256_hash = await vault_service.encrypt_stream_to_vault(

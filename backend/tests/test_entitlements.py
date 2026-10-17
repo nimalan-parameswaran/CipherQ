@@ -25,7 +25,7 @@ from backend.app.services.vault import vault_service, reconcile_startup_vault
 
 
 @pytest.mark.asyncio
-async def test_free_and_premium_entitlement_resolution(client: AsyncClient, db_session):
+async def test_free_and_premium_entitlement_resolution(client: AsyncClient):
     """Verify authoritative entitlement resolution: 1 GB for FREE, 5 GB for PREMIUM."""
     # Register FREE user
     reg_free = await client.post("/api/v1/auth/register", json={
@@ -63,7 +63,7 @@ async def test_free_and_premium_entitlement_resolution(client: AsyncClient, db_s
 
 
 @pytest.mark.asyncio
-async def test_upload_below_exact_and_above_quota(client: AsyncClient, db_session):
+async def test_upload_below_exact_and_above_quota(client: AsyncClient, test_db_session):
     """
     Simulate a user nearing quota boundary and verify that uploads below or at limit succeed,
     while uploads exceeding the remaining quota are rejected with HTTP 413.
@@ -77,12 +77,12 @@ async def test_upload_below_exact_and_above_quota(client: AsyncClient, db_sessio
 
     # Artificially set usage to 999,999,800 bytes (200 bytes remaining of 1,000,000,000 bytes)
     user_stmt = select(User).where(User.email == email)
-    user = (await db_session.execute(user_stmt)).scalar_one()
+    user = (await test_db_session.execute(user_stmt)).scalar_one()
 
     usage_stmt = select(UsageRecord).where(UsageRecord.user_id == user.id)
-    usage = (await db_session.execute(usage_stmt)).scalar_one()
+    usage = (await test_db_session.execute(usage_stmt)).scalar_one()
     usage.storage_bytes_used = 999_999_800
-    await db_session.commit()
+    await test_db_session.commit()
 
     # 1. Upload 50 bytes (below limit: 200 remaining - 50 = 150 remaining) -> SUCCESS (201)
     payload_50 = b"A" * 50
@@ -109,7 +109,7 @@ async def test_upload_below_exact_and_above_quota(client: AsyncClient, db_sessio
 
 
 @pytest.mark.asyncio
-async def test_concurrent_uploads_racing_for_quota(client: AsyncClient, db_session):
+async def test_concurrent_uploads_racing_for_quota(client: AsyncClient, test_db_session):
     """
     Verify that concurrent upload requests racing for the same user's remaining quota
     cannot jointly exceed the quota limit.
@@ -123,12 +123,12 @@ async def test_concurrent_uploads_racing_for_quota(client: AsyncClient, db_sessi
 
     # Set usage so user has exactly 300 bytes remaining (1,000,000,000 - 300)
     user_stmt = select(User).where(User.email == email)
-    user = (await db_session.execute(user_stmt)).scalar_one()
+    user = (await test_db_session.execute(user_stmt)).scalar_one()
 
     usage_stmt = select(UsageRecord).where(UsageRecord.user_id == user.id)
-    usage = (await db_session.execute(usage_stmt)).scalar_one()
+    usage = (await test_db_session.execute(usage_stmt)).scalar_one()
     usage.storage_bytes_used = 999_999_700
-    await db_session.commit()
+    await test_db_session.commit()
 
     # Launch two concurrent uploads of 200 bytes each.
     # Individually, each 200B fits within the 300B remaining.
@@ -148,12 +148,12 @@ async def test_concurrent_uploads_racing_for_quota(client: AsyncClient, db_sessi
     assert 413 in status_codes, "The racing concurrent upload that would cause an overage must be rejected with 413"
 
     # Verify final stored usage in database did NOT exceed 1,000,000,000 bytes
-    await db_session.refresh(usage)
+    await test_db_session.refresh(usage)
     assert usage.storage_bytes_used <= 1_000_000_000, "Usage record exceeded authoritative quota limit!"
 
 
 @pytest.mark.asyncio
-async def test_usage_reconciliation_after_restart_and_deletion(client: AsyncClient, db_session):
+async def test_usage_reconciliation_after_restart_and_deletion(client: AsyncClient, test_db_session):
     """
     Verify that startup reconciliation accurately recalculates storage_bytes_used
     from active FileRecords, preventing stale or negative numbers.
@@ -179,24 +179,29 @@ async def test_usage_reconciliation_after_restart_and_deletion(client: AsyncClie
 
     # Corrupt usage record intentionally to simulate database drift/crash
     user_stmt = select(User).where(User.email == email)
-    user = (await db_session.execute(user_stmt)).scalar_one()
+    user = (await test_db_session.execute(user_stmt)).scalar_one()
     usage_stmt = select(UsageRecord).where(UsageRecord.user_id == user.id)
-    usage = (await db_session.execute(usage_stmt)).scalar_one()
+    usage = (await test_db_session.execute(usage_stmt)).scalar_one()
     usage.storage_bytes_used = 999999  # Stale corrupted value
-    await db_session.commit()
+    await test_db_session.commit()
 
-    # Run startup reconciliation
-    from backend.app.db.session import AsyncSessionLocal
-    await reconcile_startup_vault(AsyncSessionLocal)
+    # Run startup reconciliation using isolated test session factory
+    from contextlib import asynccontextmanager
+
+    @asynccontextmanager
+    async def mock_factory():
+        yield test_db_session
+
+    await reconcile_startup_vault(mock_factory)
 
     # Verify reconciliation corrected usage back to actual active file size (20 bytes)
-    await db_session.refresh(usage)
+    await test_db_session.refresh(usage)
     assert usage.storage_bytes_used == 20, "Startup reconciliation did not accurately recalculate usage!"
 
     # Clean up
     await client.delete(f"/api/v1/files/{f1_id}", headers=headers)
     await client.delete(f"/api/v1/files/{f2_id}", headers=headers)
-    await db_session.refresh(usage)
+    await test_db_session.refresh(usage)
     assert usage.storage_bytes_used == 0
 
 
@@ -313,7 +318,7 @@ async def test_upgrade_and_immediate_entitlement_application(client: AsyncClient
 
 
 @pytest.mark.asyncio
-async def test_downgrade_over_quota_preserves_files_and_blocks_new_uploads(client: AsyncClient, db_session):
+async def test_downgrade_over_quota_preserves_files_and_blocks_new_uploads(client: AsyncClient, test_db_session):
     """
     On downgrade to FREE:
     - Existing files are preserved (not deleted automatically).
@@ -338,11 +343,11 @@ async def test_downgrade_over_quota_preserves_files_and_blocks_new_uploads(clien
 
     # Artificially set usage to 1.5 GB (1,500,000,000 bytes)
     user_stmt = select(User).where(User.email == email)
-    user = (await db_session.execute(user_stmt)).scalar_one()
+    user = (await test_db_session.execute(user_stmt)).scalar_one()
     usage_stmt = select(UsageRecord).where(UsageRecord.user_id == user.id)
-    usage = (await db_session.execute(usage_stmt)).scalar_one()
+    usage = (await test_db_session.execute(usage_stmt)).scalar_one()
     usage.storage_bytes_used = 1_500_000_000
-    await db_session.commit()
+    await test_db_session.commit()
 
     # Admin downgrades user to FREE
     down_res = await client.post(
@@ -376,7 +381,7 @@ async def test_downgrade_over_quota_preserves_files_and_blocks_new_uploads(clien
 
     # 4. User deletes file, bringing usage back below 1 GB
     usage.storage_bytes_used = 500_000_000  # Now within 1 GB limit
-    await db_session.commit()
+    await test_db_session.commit()
 
     # 5. New upload now SUCCEEDS
     new_up_ok = await client.post(
@@ -408,7 +413,7 @@ async def test_cross_user_isolation_plan_and_usage(client: AsyncClient):
 
 
 @pytest.mark.asyncio
-async def test_plan_audit_logging(client: AsyncClient, db_session):
+async def test_plan_audit_logging(client: AsyncClient):
     """Verify that plan changes record immutable audit events with zero secrets logged."""
     email = "audit_check@example.com"
     await client.post("/api/v1/auth/register", json={"email": email, "password": "Password2026!", "plan_type": "FREE"})
@@ -435,3 +440,35 @@ async def test_plan_audit_logging(client: AsyncClient, db_session):
     # Verify NO secrets are leaked in audit log
     for key in ("password", "token", "content", "key"):
         assert key not in latest
+
+
+@pytest.mark.asyncio
+async def test_cli_manage_plan(client: AsyncClient, test_db_session):
+    """Verify that the command-line administration tool modifies plans and logs audit events."""
+    from backend.app.cli.manage_plan import set_user_plan
+    from unittest.mock import patch
+    from contextlib import asynccontextmanager
+
+    email = "cli_user@example.com"
+    await client.post("/api/v1/auth/register", json={"email": email, "password": "Password2026!", "plan_type": "FREE"})
+
+    @asynccontextmanager
+    async def mock_session():
+        yield test_db_session
+
+    with patch("backend.app.cli.manage_plan.AsyncSessionLocal", side_effect=mock_session):
+        exit_code = await set_user_plan(email, "PREMIUM", reason="terminal_admin_action")
+        assert exit_code == 0
+
+    # Verify user is now PREMIUM
+    user_stmt = select(User).where(User.email == email)
+    user = (await test_db_session.execute(user_stmt)).scalar_one()
+    assert user.plan_type == "PREMIUM"
+
+    # Verify audit event was created by cli_admin
+    audit_stmt = select(PlanAuditEvent).where(PlanAuditEvent.user_id == user.id)
+    audit = (await test_db_session.execute(audit_stmt)).scalar_one()
+    assert audit.changed_by == "cli_admin"
+    assert audit.new_plan == "PREMIUM"
+    assert audit.reason == "terminal_admin_action"
+

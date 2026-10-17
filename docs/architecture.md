@@ -245,4 +245,34 @@ CREATE TABLE usage_records (
     ai_queries_today INTEGER NOT NULL DEFAULT 0,
     last_query_date TEXT
 );
+
+-- Plan Audit Events
+CREATE TABLE plan_audit_events (
+    id TEXT PRIMARY KEY,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    old_plan TEXT NOT NULL,
+    new_plan TEXT NOT NULL,
+    changed_by TEXT NOT NULL, -- 'admin_api', 'cli_admin'
+    reason TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
 ```
+
+---
+
+## 7. Entitlements, Quotas & Administrative Plan Management
+
+### 7.1 Authoritative Quota Standards
+- Quotas are strictly accounted in **decimal bytes**:
+  - `FREE`: **1 GB** (`1,000,000,000` bytes)
+  - `PREMIUM`: **5 GB** (`5,000,000,000` bytes)
+- **Accounted Storage Metric**: The authoritative billable storage metric is the exact physical ciphertext size stored in `data/vault/{file_id}.cqenc` on disk.
+- **Temporary Upload Staging**: In-flight upload chunks writing to `.tmp` files are tracked concurrently by `InFlightQuotaTracker`. If concurrent uploads race for remaining capacity, only uploads fitting within the remaining quota succeed; competing uploads exceeding the limit receive HTTP 413.
+- **Startup Reconciliation**: `reconcile_startup_vault` recalculates `UsageRecord.storage_bytes_used` across all users on every boot via `SELECT COALESCE(SUM(file_size_bytes), 0) FROM files WHERE user_id = :u_id AND status = 'ACTIVE'`, eliminating negative, stale, or double-counted usage.
+
+### 7.2 Plan Upgrade and Downgrade Lifecycle
+- **Administrative Control**: Subscription tiers are modified via authenticated backend endpoints (`POST /api/v1/admin/users/plan` with `X-Admin-Token`) or host CLI (`python -m backend.app.cli.manage_plan <email> <FREE|PREMIUM>`). Ordinary user sessions have zero access to plan escalation.
+- **Immediate Upgrade**: Applying a plan upgrade updates database state immediately; active sessions enjoy 5 GB quota and semantic capabilities on the subsequent request.
+- **Downgrade Preservation**: Downgrading an account that holds more than 1 GB preserves all existing encrypted files, downloads, and FTS5 keyword searches. New uploads are blocked with HTTP 413 until the user deletes enough files to drop below 1 GB.
+- **Audit Logging**: Every plan modification is durably logged to `plan_audit_events` with timestamp, actor, previous plan, target plan, and reason with zero secrets logged.
+

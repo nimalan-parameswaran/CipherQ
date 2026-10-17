@@ -35,16 +35,19 @@ CipherQ is a secure, resource-conscious personal cloud vault designed to run on 
 
 ## 3. Subscription Model & Entitlements
 
-CipherQ establishes two distinct subscription experiences. **Security protections are identical across both tiers**; the tiers differ strictly by storage capacity and compute-intensive AI capabilities.
+CipherQ establishes two distinct subscription experiences. **Cryptographic security protections are identical across both tiers**; the tiers differ strictly by storage capacity and compute-intensive AI capabilities.
 
 | Feature Area | FREE Plan | PREMIUM Plan | Backend Enforcement Mechanism |
 | :--- | :--- | :--- | :--- |
-| **Storage Quota** | **1 GB** (Hypothesis) | **5 GB** (Hypothesis) | Pre-upload stream validation; rejects payload with `413 Payload Too Large` if user quota exceeded |
-| **Encryption Standard** | Vetted Streaming AEAD (per-file DEK) | Vetted Streaming AEAD (per-file DEK) | Parity: Every file is encrypted before persistent disk write |
-| **File Operations** | Upload, Download, Rename, Delete | Upload, Download, Rename, Delete | Authorized strictly against authenticated user session |
-| **Search Engine** | **SQLite FTS5 Keyword Search** | **Semantic Vector Search + AI Q&A** | Server validates tier on `/api/ai/*` routes; returns `403 Forbidden` to Free users |
-| **AI Query Allowance** | 0 queries/month | Up to 100 queries/day (rate limited) | Tracked in `usage_records` table; enforces bounded concurrency (max 1 concurrent query) |
-| **UI Experience** | Standard Dashboard & Vault | Premium Badge, AI Chat Tab, Semantic Excerpts | Frontend renders tier status; backend independently verifies all requests |
+| **Storage Quota** | **1 GB** (`1,000,000,000` decimal bytes) | **5 GB** (`5,000,000,000` decimal bytes) | Decimal byte accounting; `InFlightQuotaTracker` and commit-time atomic validation; rejects overages with HTTP 413 |
+| **Encryption Standard** | Vetted Streaming AEAD (per-file DEK) | Vetted Streaming AEAD (per-file DEK) | Cryptographic Parity: Every file is encrypted before persistent disk write |
+| **File Operations** | Upload, Download, List, Delete | Upload, Download, List, Delete | Authorized strictly against authenticated user session; cross-user isolation |
+| **Search Engine** | **SQLite FTS5 Keyword Search** | **Hybrid (FTS5 + Local Semantic Vector)** | Server validates tier on `/api/v1/ai/*`; returns `403 Forbidden` to Free users on semantic mode |
+| **AI Citations & Grounding** | Grounded source citations | Grounded source citations | Dual-Tier Extractive Grounding across both tiers |
+| **AI Query Allowance** | Included (unmetered FTS5) | Up to 100 queries/day (rate limited) | Tracked in `usage_records` table; enforces bounded concurrency (max 1 concurrent query) |
+| **Downgrade Preservation** | Preserves all existing files | N/A | Existing files remain safe; new uploads blocked with HTTP 413 until usage drops below 1 GB |
+| **Plan Management** | Controlled admin API / CLI | Controlled admin API / CLI | Authenticated via `X-Admin-Token` or local CLI; auditable events logged to `plan_audit_events` |
+| **Zero External Transmission** | ✓ 100% Local | ✓ 100% Local | Offline environment flags; zero cloud AI API dependencies |
 
 ---
 
