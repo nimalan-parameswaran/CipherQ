@@ -109,13 +109,13 @@ def test_browser_full_e2e_lifecycle(live_server, browser_instance, tmp_path):
     page.locator("#btn-nav-register").click()
 
     expect(page.locator("#auth-modal")).to_be_visible()
-    page.fill("#reg-email", "maya@cipherq.test")
+    page.fill("#reg-email", "maya@example.com")
     page.fill("#reg-password", "MayaSecret2026!")
     page.select_option("#reg-plan", "FREE")
     page.click("#btn-submit-register")
 
     # Verify post-registration authenticated state
-    expect(page.locator("#user-display")).to_have_text("maya@cipherq.test")
+    expect(page.locator("#user-display")).to_have_text("maya@example.com")
     expect(page.locator("#plan-badge")).to_have_text("FREE")
     expect(page.locator("#btn-nav-logout")).to_be_visible()
 
@@ -133,7 +133,7 @@ def test_browser_full_e2e_lifecycle(live_server, browser_instance, tmp_path):
     # 3. Dashboard Quota Verification (Maya - FREE: 1GB)
     # -------------------------------------------------------------
     page.goto(f"{base_url}/dashboard.html")
-    expect(page.locator("#user-badge")).to_have_text("maya@cipherq.test")
+    expect(page.locator("#user-badge")).to_have_text("maya@example.com")
     expect(page.locator("#storage-text")).to_contain_text("of 1 GB used")
     expect(page.locator("#ai-status-text")).to_contain_text("Keyword Search")
 
@@ -180,17 +180,17 @@ def test_browser_full_e2e_lifecycle(live_server, browser_instance, tmp_path):
 
     # Alex registers on PREMIUM tier
     page.locator("#btn-nav-register").click()
-    page.fill("#reg-email", "alex@cipherq.test")
+    page.fill("#reg-email", "alex@example.com")
     page.fill("#reg-password", "AlexSecret2026!")
     page.select_option("#reg-plan", "PREMIUM")
     page.click("#btn-submit-register")
 
-    expect(page.locator("#user-display")).to_have_text("alex@cipherq.test")
+    expect(page.locator("#user-display")).to_have_text("alex@example.com")
     expect(page.locator("#plan-badge")).to_have_text("PREMIUM")
 
     # Verify Alex's Dashboard (5GB quota & Semantic Search active)
     page.goto(f"{base_url}/dashboard.html")
-    expect(page.locator("#user-badge")).to_have_text("alex@cipherq.test")
+    expect(page.locator("#user-badge")).to_have_text("alex@example.com")
     expect(page.locator("#storage-text")).to_contain_text("of 5 GB used")
     expect(page.locator("#ai-status-text")).to_contain_text("Semantic Vector Search")
 
@@ -215,11 +215,11 @@ def test_browser_full_e2e_lifecycle(live_server, browser_instance, tmp_path):
 
     # Maya logs in
     page.locator("#btn-nav-login").click()
-    page.fill("#login-email", "maya@cipherq.test")
+    page.fill("#login-email", "maya@example.com")
     page.fill("#login-password", "MayaSecret2026!")
     page.click("#btn-submit-login")
 
-    expect(page.locator("#user-display")).to_have_text("maya@cipherq.test")
+    expect(page.locator("#user-display")).to_have_text("maya@example.com")
 
     page.goto(f"{base_url}/files.html")
     # Verify Maya sees her file and NOT Alex's file

@@ -20,6 +20,15 @@ class CipherQAPIClient {
     }
   }
 
+  _formatError(err, fallback) {
+    if (!err) return fallback;
+    if (typeof err.detail === "string") return err.detail;
+    if (Array.isArray(err.detail)) {
+      return err.detail.map(d => d.msg || d.loc?.join(".") || "Invalid input").join("; ");
+    }
+    return err.message || fallback;
+  }
+
   async register(email, password, planType = "FREE") {
     const res = await fetch(`${this.baseUrl}/auth/register`, {
       method: "POST",
@@ -28,7 +37,7 @@ class CipherQAPIClient {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Registration failed." }));
-      throw new Error(err.detail || "Registration failed.");
+      throw new Error(this._formatError(err, "Registration failed."));
     }
     return await res.json();
   }
@@ -41,7 +50,7 @@ class CipherQAPIClient {
     });
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Invalid email or password." }));
-      throw new Error(err.detail || "Invalid email or password.");
+      throw new Error(this._formatError(err, "Invalid email or password."));
     }
     const data = await res.json();
     this.setCSRFToken(data.csrf_token);

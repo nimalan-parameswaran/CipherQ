@@ -24,6 +24,7 @@ class UserResponse(BaseModel):
     plan_type: str
     is_active: bool
     created_at: datetime
+    csrf_token: str | None = None
 
     model_config = ConfigDict(from_attributes=True)
 
