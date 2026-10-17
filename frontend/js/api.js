@@ -190,6 +190,46 @@ class CipherQAPIClient {
     }
     return await res.json();
   }
+
+  async indexFile(fileId) {
+    const res = await fetch(`${this.baseUrl}/ai/index/${fileId}`, {
+      method: "POST",
+      headers: { "X-CSRF-Token": this.getCSRFToken() }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Indexing failed." }));
+      throw new Error(err.detail || "Indexing failed.");
+    }
+    return await res.json();
+  }
+
+  async unindexFile(fileId) {
+    const res = await fetch(`${this.baseUrl}/ai/index/${fileId}`, {
+      method: "DELETE",
+      headers: { "X-CSRF-Token": this.getCSRFToken() }
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "Unindexing failed." }));
+      throw new Error(err.detail || "Unindexing failed.");
+    }
+    return await res.json();
+  }
+
+  async queryAI(query, limit = 5) {
+    const res = await fetch(`${this.baseUrl}/ai/query`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-CSRF-Token": this.getCSRFToken()
+      },
+      body: JSON.stringify({ query, limit })
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ detail: "AI Query failed." }));
+      throw new Error(err.detail || "AI Query failed.");
+    }
+    return await res.json();
+  }
 }
 
 export const api = new CipherQAPIClient();

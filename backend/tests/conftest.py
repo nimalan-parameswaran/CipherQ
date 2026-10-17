@@ -9,7 +9,7 @@ from pathlib import Path
 from typing import AsyncGenerator
 from httpx import AsyncClient, ASGITransport
 from sqlalchemy.ext.asyncio import create_async_engine, async_sessionmaker, AsyncSession
-from sqlalchemy import event
+from sqlalchemy import event, text
 
 from backend.app.core.config import settings
 from backend.app.core.key_manager import MasterKeyManager
@@ -68,9 +68,21 @@ async def test_db_session(temp_dir) -> AsyncGenerator[AsyncSession, None]:
         autoflush=False
     )
 
-    # Initialize tables
+    # Initialize tables & SQLite FTS5 table
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
+        await conn.execute(
+            text(
+                """
+                CREATE VIRTUAL TABLE IF NOT EXISTS file_chunks_fts USING fts5(
+                    chunk_id UNINDEXED,
+                    file_id UNINDEXED,
+                    user_id UNINDEXED,
+                    content
+                );
+                """
+            )
+        )
 
     async with async_session() as session:
         yield session

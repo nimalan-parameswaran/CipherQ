@@ -235,6 +235,7 @@ async def reconcile_startup_vault(session_factory) -> dict:
     3. Orphan Quarantine: Files on disk with no matching database record are safely moved to vault/orphans/.
     """
     import time
+    from sqlalchemy import text
     from sqlalchemy.future import select
     from backend.app.db.models import CleanupQueue, FileRecord
 
@@ -267,6 +268,7 @@ async def reconcile_startup_vault(session_factory) -> dict:
                 stmt_f = select(FileRecord).where(FileRecord.id == task.file_id)
                 f_rec = (await db.execute(stmt_f)).scalar_one_or_none()
                 if f_rec:
+                    await db.execute(text("DELETE FROM file_chunks_fts WHERE file_id = :file_id"), {"file_id": task.file_id})
                     await db.delete(f_rec)
                 summary["retried_cleanups"] += 1
             else:

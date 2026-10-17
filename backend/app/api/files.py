@@ -7,6 +7,7 @@ import uuid
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, status, Response
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy import text
 from sqlalchemy.future import select
 
 from backend.app.core.config import settings
@@ -250,6 +251,7 @@ async def delete_file(
     success = vault_service.delete_vault_file(storage_name)
     if success:
         task.status = "COMPLETED"
+        await db.execute(text("DELETE FROM file_chunks_fts WHERE file_id = :file_id"), {"file_id": file_id})
         await db.delete(file_record)
     else:
         task.status = "FAILED"

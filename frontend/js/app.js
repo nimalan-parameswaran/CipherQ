@@ -344,12 +344,16 @@ async function renderFileList(container) {
       </td>
       <td>${formatBytes(file.file_size_bytes)}</td>
       <td>
-        <span class="badge ${file.is_indexed ? 'badge-success' : 'badge-free'}">
-          ${file.is_indexed ? 'Indexed' : 'Encrypted Vault'}
+        <span class="badge ${file.is_indexed ? 'badge-success' : 'badge-free'}" id="badge-${file.id}">
+          ${file.is_indexed ? 'AI Indexed' : 'Encrypted Only'}
         </span>
       </td>
       <td>${new Date(file.created_at).toLocaleDateString()}</td>
       <td style="text-align:right;">
+        ${file.is_indexed
+          ? `<button class="btn btn-outline btn-sm unindex-btn" data-id="${file.id}">Unindex</button>`
+          : `<button class="btn btn-primary btn-sm index-btn" data-id="${file.id}">⚡ Index for AI</button>`
+        }
         <button class="btn btn-outline btn-sm download-btn" data-id="${file.id}" data-name="${file.original_name}">
           Download
         </button>
@@ -359,6 +363,42 @@ async function renderFileList(container) {
       </td>
     </tr>
   `).join("");
+
+  // Attach on-demand index handlers
+  container.querySelectorAll(".index-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      const targetBtn = e.currentTarget;
+      const id = targetBtn.getAttribute("data-id");
+      try {
+        targetBtn.disabled = true;
+        targetBtn.textContent = "Indexing in RAM...";
+        await api.indexFile(id);
+        await renderFileList(container);
+      } catch (err) {
+        alert("Indexing failed: " + err.message);
+        targetBtn.disabled = false;
+        targetBtn.textContent = "⚡ Index for AI";
+      }
+    });
+  });
+
+  // Attach unindex handlers
+  container.querySelectorAll(".unindex-btn").forEach(btn => {
+    btn.addEventListener("click", async (e) => {
+      const targetBtn = e.currentTarget;
+      const id = targetBtn.getAttribute("data-id");
+      try {
+        targetBtn.disabled = true;
+        targetBtn.textContent = "Removing...";
+        await api.unindexFile(id);
+        await renderFileList(container);
+      } catch (err) {
+        alert("Unindexing failed: " + err.message);
+        targetBtn.disabled = false;
+        targetBtn.textContent = "Unindex";
+      }
+    });
+  });
 
   // Attach download handlers
   container.querySelectorAll(".download-btn").forEach(btn => {

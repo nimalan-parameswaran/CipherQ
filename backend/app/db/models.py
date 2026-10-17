@@ -71,6 +71,41 @@ class FileRecord(Base):
     created_at = Column(DateTime, nullable=False, default=utc_now)
 
     user = relationship("User", back_populates="files")
+    chunks = relationship("FileChunk", back_populates="file", cascade="all, delete-orphan")
+
+
+class FileChunk(Base):
+    """
+    Extracted text passage from an indexed vault file.
+    Retains page and sequence metadata for grounded citations.
+    """
+    __tablename__ = "file_chunks"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    file_id = Column(String(36), ForeignKey("files.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    chunk_index = Column(Integer, nullable=False)
+    page_number = Column(Integer, nullable=False, default=1)
+    content = Column(String, nullable=False)
+    char_count = Column(Integer, nullable=False, default=0)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+
+    file = relationship("FileRecord", back_populates="chunks")
+    embedding = relationship("ChunkEmbedding", back_populates="chunk", uselist=False, cascade="all, delete-orphan")
+
+
+class ChunkEmbedding(Base):
+    """Vector embedding bytes for semantic search."""
+    __tablename__ = "chunk_embeddings"
+
+    id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
+    chunk_id = Column(String(36), ForeignKey("file_chunks.id", ondelete="CASCADE"), nullable=False, unique=True, index=True)
+    user_id = Column(String(36), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    embedding = Column(LargeBinary, nullable=False)  # Packed float32 bytes
+    dimensions = Column(Integer, nullable=False, default=384)
+    created_at = Column(DateTime, nullable=False, default=utc_now)
+
+    chunk = relationship("FileChunk", back_populates="embedding")
 
 
 class CleanupQueue(Base):
@@ -102,6 +137,8 @@ class UsageRecord(Base):
     user = relationship("User", back_populates="usage")
 
 
-# Composite indexes for fast user file queries
+# Composite indexes for fast queries
 Index("ix_files_user_status", FileRecord.user_id, FileRecord.status)
+Index("ix_chunks_user_file", FileChunk.user_id, FileChunk.file_id)
+Index("ix_embeddings_user", ChunkEmbedding.user_id)
 Index("ix_cleanup_status_retries", CleanupQueue.status, CleanupQueue.retry_count)
