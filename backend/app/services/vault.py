@@ -226,4 +226,71 @@ class VaultStorageService:
             return False
 
 
+async def reconcile_startup_vault(session_factory) -> dict:
+    """
+    Conservative startup reconciliation:
+    1. Active Upload Safety: Temporary files (.tmp) modified within the last 30 minutes are strictly preserved.
+       Only stale .tmp files older than 1 hour are unlinked.
+    2. Retryable Deletion Queue: Resumes pending/failed deletion tasks from cleanup_queue.
+    3. Orphan Quarantine: Files on disk with no matching database record are safely moved to vault/orphans/.
+    """
+    import time
+    from sqlalchemy.future import select
+    from backend.app.db.models import CleanupQueue, FileRecord
+
+    summary = {"stale_tmp_deleted": 0, "retried_cleanups": 0, "orphans_quarantined": 0}
+    now = time.time()
+    vault_dir = settings.VAULT_DIR
+    orphans_dir = vault_dir / "orphans"
+
+    # 1. Clean stale .tmp files (> 1 hour old; never touch < 30 mins)
+    for entry in vault_dir.glob("*.tmp"):
+        try:
+            mtime = entry.stat().st_mtime
+            age_sec = now - mtime
+            if age_sec > 3600:  # > 1 hour old
+                os.remove(entry)
+                summary["stale_tmp_deleted"] += 1
+        except Exception:
+            pass
+
+    # 2. Process CleanupQueue tasks
+    async with session_factory() as db:
+        stmt = select(CleanupQueue).where(CleanupQueue.status.in_(["PENDING", "FAILED"]))
+        pending_tasks = (await db.execute(stmt)).scalars().all()
+
+        for task in pending_tasks:
+            success = vault_service.delete_vault_file(task.storage_path)
+            if success:
+                task.status = "COMPLETED"
+                # Remove any lingering FileRecord
+                stmt_f = select(FileRecord).where(FileRecord.id == task.file_id)
+                f_rec = (await db.execute(stmt_f)).scalar_one_or_none()
+                if f_rec:
+                    await db.delete(f_rec)
+                summary["retried_cleanups"] += 1
+            else:
+                task.retry_count += 1
+                task.last_error = "Startup reconciliation: file still locked or missing."
+        await db.commit()
+
+    # 3. Check for orphan .cqenc files on disk
+    async with session_factory() as db:
+        stmt_active = select(FileRecord.storage_name).where(FileRecord.status == "ACTIVE")
+        active_names = set((await db.execute(stmt_active)).scalars().all())
+
+        for entry in vault_dir.glob("*.cqenc"):
+            if entry.name not in active_names:
+                orphans_dir.mkdir(parents=True, exist_ok=True)
+                dest = orphans_dir / entry.name
+                try:
+                    entry.replace(dest)
+                    summary["orphans_quarantined"] += 1
+                except Exception:
+                    pass
+
+    return summary
+
+
 vault_service = VaultStorageService()
+
