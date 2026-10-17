@@ -10,8 +10,10 @@ from fastapi.staticfiles import StaticFiles
 
 from backend.app.core.config import settings
 from backend.app.core.key_manager import key_manager
-from backend.app.db.session import engine, Base
+from backend.app.db.session import engine, Base, AsyncSessionLocal
+from backend.app.services.vault import reconcile_startup_vault
 from backend.app.api.auth import router as auth_router
+from backend.app.api.files import router as files_router
 
 FRONTEND_DIR = Path(__file__).resolve().parent.parent.parent / "frontend"
 
@@ -21,7 +23,7 @@ async def lifespan(app: FastAPI):
     """
     Application startup and shutdown hooks.
     Ensures storage directories exist, database schema is created,
-    and Master Key passes its in-memory self-test.
+    Master Key passes its self-test, and vault reconciliation executes.
     """
     # 1. Initialize local storage directories
     settings.init_directories()
@@ -32,6 +34,9 @@ async def lifespan(app: FastAPI):
 
     # 3. Master Key startup self-test
     key_manager.validate_or_init()
+
+    # 4. Conservative startup vault reconciliation
+    await reconcile_startup_vault(AsyncSessionLocal)
 
     yield
 
@@ -48,6 +53,7 @@ app = FastAPI(
 
 # Register API v1 Routers
 app.include_router(auth_router, prefix=settings.API_V1_STR)
+app.include_router(files_router, prefix=settings.API_V1_STR)
 
 
 @app.get(f"{settings.API_V1_STR}/health", tags=["Health"])
