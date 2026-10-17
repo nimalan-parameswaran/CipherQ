@@ -16,7 +16,7 @@ from pathlib import Path
 import psutil
 import httpx
 
-from nacl.bindings import sodium_version_string
+import nacl
 
 
 def get_free_port() -> int:
@@ -33,7 +33,7 @@ def get_system_specs():
         "cpu": f"{platform.processor() or platform.machine()} ({psutil.cpu_count(logical=False)} cores, {psutil.cpu_count(logical=True)} threads @ {freq_str})",
         "total_ram_gb": round(psutil.virtual_memory().total / (1024**3), 2),
         "python_version": platform.python_version(),
-        "libsodium_version": sodium_version_string().decode("utf-8")
+        "libsodium_version": f"PyNaCl {nacl.__version__} (libsodium engine)"
     }
 
 
@@ -196,8 +196,9 @@ async def profile_transfers():
         download_resp_50 = await client.get(f"/api/v1/files/{file_50_id}/download")
         t_download_50 = time.perf_counter() - t0
         peak_download_ram_50 = runner.get_server_rss_mb()
+        print(f"50MB Download Status: {download_resp_50.status_code}, Length: {len(download_resp_50.content)}")
         assert download_resp_50.status_code == 200
-        assert download_resp.content == payload_50mb, "50MB downloaded plaintext integrity mismatch!"
+        assert download_resp_50.content == payload_50mb, "50MB downloaded plaintext integrity mismatch!"
 
         upload_50_mbps = round((50 / t_upload_50), 2)
         download_50_mbps = round((50 / t_download_50), 2)
@@ -216,7 +217,51 @@ async def profile_transfers():
         })
 
         # -------------------------------------------------------------
-        # Test 3: 2 Concurrent 25 MB Streaming Transfers
+        # Test 3: 100 MB Upload & Download Streaming Profiling
+        # -------------------------------------------------------------
+        size_100mb = 100 * 1024 * 1024
+        payload_100mb = os.urandom(size_100mb)
+
+        ram_pre_100 = runner.get_server_rss_mb()
+
+        # Upload 100 MB
+        t0 = time.perf_counter()
+        upload_resp_100 = await client.post(
+            "/api/v1/files",
+            files={"file": ("bench_100mb.bin", payload_100mb, "application/octet-stream")},
+            headers=auth_headers
+        )
+        t_upload_100 = time.perf_counter() - t0
+        peak_upload_ram_100 = runner.get_server_rss_mb()
+        assert upload_resp_100.status_code == 201
+        file_100_id = upload_resp_100.json()["id"]
+
+        # Download 100 MB
+        t0 = time.perf_counter()
+        download_resp_100 = await client.get(f"/api/v1/files/{file_100_id}/download")
+        t_download_100 = time.perf_counter() - t0
+        peak_download_ram_100 = runner.get_server_rss_mb()
+        assert download_resp_100.status_code == 200
+        assert download_resp_100.content == payload_100mb, "100MB downloaded plaintext integrity mismatch!"
+
+        upload_100_mbps = round((100 / t_upload_100), 2)
+        download_100_mbps = round((100 / t_download_100), 2)
+
+        results.append({
+            "test": "100 MB Single Transfer",
+            "size_mb": 100,
+            "upload_time_s": round(t_upload_100, 3),
+            "upload_throughput_mb_s": upload_100_mbps,
+            "download_time_s": round(t_download_100, 3),
+            "download_throughput_mb_s": download_100_mbps,
+            "baseline_ram_mb": ram_pre_100,
+            "peak_upload_ram_mb": peak_upload_ram_100,
+            "peak_download_ram_mb": peak_download_ram_100,
+            "ram_delta_mb": round(max(peak_upload_ram_100, peak_download_ram_100) - ram_pre_100, 2)
+        })
+
+        # -------------------------------------------------------------
+        # Test 4: 2 Concurrent 25 MB Streaming Transfers
         # -------------------------------------------------------------
         c_payload_1 = os.urandom(25 * 1024 * 1024)
         c_payload_2 = os.urandom(25 * 1024 * 1024)
