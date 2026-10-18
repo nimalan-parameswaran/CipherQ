@@ -62,6 +62,16 @@ class CipherQAPIClient {
     }
   }
 
+  async _fetch(url, options = {}) {
+    try {
+      return await fetch(url, options);
+    } catch (error) {
+      throw new Error(
+        "The CipherQ backend could not be reached. Check the HTTPS API URL, CORS settings, and tunnel status."
+      );
+    }
+  }
+
   // Returns fetch options that include credentials when cross-origin.
   // credentials: 'include' is required for the HttpOnly session cookie to be
   // sent to a different origin. On same-origin requests, 'same-origin' is
@@ -96,7 +106,7 @@ class CipherQAPIClient {
 
   async register(email, password, planType = "FREE") {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/auth/register`, this._fetchOptions({
+    const res = await this._fetch(`${this.baseUrl}/auth/register`, this._fetchOptions({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password, plan_type: planType })
@@ -110,7 +120,7 @@ class CipherQAPIClient {
 
   async login(email, password) {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/auth/login`, this._fetchOptions({
+    const res = await this._fetch(`${this.baseUrl}/auth/login`, this._fetchOptions({
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, password })
@@ -128,7 +138,7 @@ class CipherQAPIClient {
     this._assertConfigured();
     const csrf = this.getCSRFToken();
     try {
-      await fetch(`${this.baseUrl}/auth/logout`, this._fetchOptions({
+      await this._fetch(`${this.baseUrl}/auth/logout`, this._fetchOptions({
         method: "POST",
         headers: { "X-CSRF-Token": csrf }
       }));
@@ -140,7 +150,7 @@ class CipherQAPIClient {
   async getMe() {
     this._assertConfigured();
     try {
-      const res = await fetch(`${this.baseUrl}/auth/me`, this._fetchOptions({
+      const res = await this._fetch(`${this.baseUrl}/auth/me`, this._fetchOptions({
         headers: { "X-CSRF-Token": this.getCSRFToken() }
       }));
       if (res.status === 401) {
@@ -165,7 +175,7 @@ class CipherQAPIClient {
   async getUsage() {
     this._assertConfigured();
     try {
-      const res = await fetch(`${this.baseUrl}/auth/usage`, this._fetchOptions({
+      const res = await this._fetch(`${this.baseUrl}/auth/usage`, this._fetchOptions({
         headers: { "X-CSRF-Token": this.getCSRFToken() }
       }));
       if (!res.ok) return null;
@@ -179,7 +189,7 @@ class CipherQAPIClient {
 
   async listFiles() {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/files`, this._fetchOptions({
+    const res = await this._fetch(`${this.baseUrl}/files`, this._fetchOptions({
       headers: { "X-CSRF-Token": this.getCSRFToken() }
     }));
     if (res.status === 401) {
@@ -244,7 +254,7 @@ class CipherQAPIClient {
 
   async downloadFile(fileId, filename) {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/files/${fileId}/download`, this._fetchOptions());
+    const res = await this._fetch(`${this.baseUrl}/files/${fileId}/download`, this._fetchOptions());
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Download failed." }));
       throw new Error(err.detail || "Download failed.");
@@ -266,7 +276,7 @@ class CipherQAPIClient {
 
   async deleteFile(fileId) {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/files/${fileId}`, this._fetchOptions({
+    const res = await this._fetch(`${this.baseUrl}/files/${fileId}`, this._fetchOptions({
       method: "DELETE",
       headers: { "X-CSRF-Token": this.getCSRFToken() }
     }));
@@ -279,7 +289,7 @@ class CipherQAPIClient {
 
   async indexFile(fileId) {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/ai/index/${fileId}`, this._fetchOptions({
+    const res = await this._fetch(`${this.baseUrl}/ai/index/${fileId}`, this._fetchOptions({
       method: "POST",
       headers: { "X-CSRF-Token": this.getCSRFToken() }
     }));
@@ -292,7 +302,7 @@ class CipherQAPIClient {
 
   async unindexFile(fileId) {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/ai/index/${fileId}`, this._fetchOptions({
+    const res = await this._fetch(`${this.baseUrl}/ai/index/${fileId}`, this._fetchOptions({
       method: "DELETE",
       headers: { "X-CSRF-Token": this.getCSRFToken() }
     }));
@@ -305,7 +315,7 @@ class CipherQAPIClient {
 
   async queryAI(query, limit = 5) {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/ai/query`, this._fetchOptions({
+    const res = await this._fetch(`${this.baseUrl}/ai/query`, this._fetchOptions({
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -322,7 +332,7 @@ class CipherQAPIClient {
 
   async adminChangePlan(email, newPlan, adminToken, reason = "dev_admin_ui") {
     this._assertConfigured();
-    const res = await fetch(`${this.baseUrl}/admin/users/plan`, this._fetchOptions({
+    const res = await this._fetch(`${this.baseUrl}/admin/users/plan`, this._fetchOptions({
       method: "POST",
       headers: {
         "Content-Type": "application/json",

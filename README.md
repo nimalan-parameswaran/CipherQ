@@ -292,6 +292,13 @@ approved HTTPS endpoint exists:
 window.CIPHERQ_API_BASE_URL = "https://api.example.com";
 ```
 
+For Pages deployments, the workflow can inject the same value without editing
+the source file: add a repository **variable** named
+`CIPHERQ_API_BASE_URL` under **Settings → Secrets and variables → Actions →
+Variables**. Use an HTTPS origin only. If the variable is absent, the deployed
+site keeps the empty value and clearly reports that backend features are not
+configured.
+
 Use the origin only; do not add `/api/v1`. The client appends that path and
 preserves the existing authentication, credentials, CSRF, upload, download,
 indexing, AI, account, and plan API contracts. This public value must never

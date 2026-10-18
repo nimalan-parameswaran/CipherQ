@@ -41,6 +41,12 @@ the `/api/v1` suffix, then deploy the frontend:
 window.CIPHERQ_API_BASE_URL = "https://api.example.com";
 ```
 
+Alternatively, configure a repository **variable** named
+`CIPHERQ_API_BASE_URL` under **Settings → Secrets and variables → Actions →
+Variables**. The Pages workflow injects that public value into the staged
+`config.js` during deployment. Do not use a secret for this value, and do not
+set it until the approved public API endpoint exists.
+
 The client appends `/api/v1` and preserves the existing request paths, request
 bodies, HttpOnly-cookie session design, CSRF header handling, and
 `credentials: "include"` behavior. The URL is not a secret. Never put

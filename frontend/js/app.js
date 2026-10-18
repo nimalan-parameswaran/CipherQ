@@ -34,7 +34,13 @@ function ensureAuthModal() {
     <div id="auth-modal" class="modal-backdrop" style="display:none">
       <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
         <div class="modal-header">
-          <div class="modal-title" id="auth-modal-title">Sign in to CipherQ</div>
+          <div class="modal-heading">
+            <div class="auth-modal-mark" aria-hidden="true">Q</div>
+            <div>
+              <div class="modal-kicker">Private workspace</div>
+              <div class="modal-title" id="auth-modal-title">Sign in to CipherQ</div>
+            </div>
+          </div>
           <button class="modal-close" id="auth-modal-close" aria-label="Close">&times;</button>
         </div>
         <div class="modal-tabs">
@@ -42,6 +48,7 @@ function ensureAuthModal() {
           <button type="button" class="modal-tab-btn" id="tab-register">Create account</button>
         </div>
         <div class="modal-body">
+          <p class="modal-intro" id="auth-modal-intro">Access your encrypted vault and local AI workspace.</p>
           <div id="auth-alert" class="alert alert-danger" style="display:none;margin-bottom:14px"></div>
           <form id="form-login">
             <div class="form-group">
@@ -62,6 +69,7 @@ function ensureAuthModal() {
             <div class="form-group">
               <label class="form-label" for="reg-password">Password</label>
               <input class="form-control" type="password" id="reg-password" minlength="10" required autocomplete="new-password">
+              <div class="form-hint">Use at least 10 characters for your vault account.</div>
             </div>
             <div class="form-group">
               <label class="form-label" for="reg-plan">Plan</label>
@@ -81,6 +89,7 @@ function ensureAuthModal() {
   const loginForm = document.getElementById("form-login");
   const registerForm = document.getElementById("form-register");
   const title = document.getElementById("auth-modal-title");
+  const intro = document.getElementById("auth-modal-intro");
   const alert = document.getElementById("auth-alert");
 
   const setMode = (mode) => {
@@ -90,6 +99,9 @@ function ensureAuthModal() {
     loginForm.style.display = login ? "block" : "none";
     registerForm.style.display = login ? "none" : "block";
     title.textContent = login ? "Sign in to CipherQ" : "Create your CipherQ account";
+    intro.textContent = login
+      ? "Access your encrypted vault and local AI workspace."
+      : "Create a private workspace for encrypted files and on-device intelligence.";
     alert.style.display = "none";
   };
 
@@ -146,6 +158,11 @@ function ensureAuthModal() {
 export function openAuthModal(mode = "login") {
   ensureAuthModal();
   document.getElementById(mode === "register" ? "tab-register" : "tab-login").click();
+  const alert = document.getElementById("auth-alert");
+  if (api.configurationError) {
+    alert.textContent = api.configurationError;
+    alert.style.display = "block";
+  }
   document.getElementById("auth-modal").style.display = "flex";
 }
 

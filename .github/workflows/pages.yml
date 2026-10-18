@@ -28,11 +28,31 @@ jobs:
         uses: actions/configure-pages@v5
 
       - name: Stage frontend-only site
+        env:
+          CIPHERQ_API_BASE_URL: ${{ vars.CIPHERQ_API_BASE_URL }}
         run: |
           rm -rf _site
           mkdir -p _site
           cp -R frontend/. _site/
           rm -f _site/js/mock-data.js
+          if [ -n "$CIPHERQ_API_BASE_URL" ]; then
+            python - <<'PY'
+            from pathlib import Path
+            import json
+            import os
+
+            path = Path("_site/js/config.js")
+            source = path.read_text()
+            value = os.environ["CIPHERQ_API_BASE_URL"].strip().rstrip("/")
+            if not value.lower().startswith("https://"):
+                raise SystemExit("CIPHERQ_API_BASE_URL must be an HTTPS origin")
+            source = source.replace(
+                'window.CIPHERQ_API_BASE_URL = "";',
+                f'window.CIPHERQ_API_BASE_URL = {json.dumps(value)};',
+            )
+            path.write_text(source)
+            PY
+          fi
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
