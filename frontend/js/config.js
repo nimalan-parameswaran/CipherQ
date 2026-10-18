@@ -32,4 +32,4 @@
 
 // Set this to the approved public HTTPS API origin before a production deploy.
 // Leave empty for local development (same-origin /api/v1).
-window.CIPHERQ_API_BASE_URL = "";
+window.CIPHERQ_API_BASE_URL = "https://disclaimers-targets-studied-scheduled.trycloudflare.com";
