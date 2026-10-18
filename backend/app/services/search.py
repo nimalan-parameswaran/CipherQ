@@ -47,7 +47,17 @@ def sanitize_fts5_query(raw_query: str) -> str:
 
     # Keep only alphanumeric and space characters
     cleaned = re.sub(r'[^\w\s]', ' ', raw_query).strip()
-    tokens = [t for t in cleaned.split() if len(t) >= 1]
+    # Ignore common question words so FTS5 focuses on document keywords.
+    stop_words = {
+        "who", "what", "where", "when", "why", "how",
+        "is", "are", "was", "were", "do", "does", "did",
+        "the", "a", "an", "and", "or", "of", "to", "in",
+        "on", "for", "by", "with", "wrote",
+    }
+    tokens = [
+        t for t in cleaned.split()
+        if len(t) >= 1 and t.casefold() not in stop_words
+    ]
 
     if not tokens:
         return ""
@@ -185,6 +195,67 @@ class SearchService:
         scored_hits.sort(key=lambda x: x.score, reverse=True)
         return scored_hits[:limit]
 
+    @staticmethod
+    def _needs_first_page(query: str) -> bool:
+        """Detect explicit title-page, title, or author lookup intent."""
+        normalized = re.sub(r"[^a-z0-9\s]", " ", query.casefold())
+        normalized = " ".join(normalized.split())
+        patterns = (
+            r"\bfirst page\b",
+            r"\btitle page\b",
+            r"\bfull title\b",
+            r"\btitle and author\b",
+            r"\bauthor name\b",
+            r"\bwho wrote\b",
+            r"\bwho is the author\b",
+            r"\bauthor of\b",
+            r"\bwritten by\b",
+        )
+        return any(re.search(pattern, normalized) for pattern in patterns)
+
+    async def search_first_page(
+        self,
+        db: AsyncSession,
+        user_id: str,
+        limit: int = 5,
+    ) -> List[SearchHit]:
+        """Retrieve page-one chunks only from the current user's active files."""
+        stmt = (
+            select(
+                FileChunk.id,
+                FileChunk.file_id,
+                FileRecord.original_name,
+                FileChunk.chunk_index,
+                FileChunk.page_number,
+                FileChunk.content,
+            )
+            .join(FileRecord, FileChunk.file_id == FileRecord.id)
+            .where(
+                FileChunk.user_id == user_id,
+                FileRecord.user_id == user_id,
+                FileRecord.status == "ACTIVE",
+                FileChunk.page_number == 1,
+            )
+            .order_by(FileRecord.created_at.desc(), FileChunk.chunk_index.asc())
+            .limit(limit)
+        )
+        result = await db.execute(stmt)
+        hits = []
+        for chunk_id, file_id, filename, chunk_index, page_number, content in result.fetchall():
+            snippet = content[:160] + "..." if len(content) > 160 else content
+            hits.append(SearchHit(
+                chunk_id=chunk_id,
+                file_id=file_id,
+                filename=filename,
+                chunk_index=chunk_index,
+                page_number=page_number,
+                content=content,
+                snippet=snippet,
+                score=1.0,
+                match_type="FIRST_PAGE_INTENT",
+            ))
+        return hits
+
     async def hybrid_search(
         self,
         db: AsyncSession,
@@ -198,30 +269,59 @@ class SearchService:
         - FREE Plan: SQLite FTS5 Keyword Search.
         - PREMIUM Plan: Combined Keyword + Semantic Vector Search with rank blending.
         """
+        first_page_hits = (
+            await self.search_first_page(db, user_id, limit=limit)
+            if self._needs_first_page(query)
+            else []
+        )
+
         if plan_type != "PREMIUM":
-            # Free tier: Keyword search only
-            return await self.search_fts5(db, user_id, query, limit=limit)
+            normal_hits = await self.search_fts5(
+                db, user_id, query, limit=limit
+            )
+            if not first_page_hits:
+                return normal_hits
+            seen = {hit.chunk_id for hit in first_page_hits}
+            return (
+                first_page_hits
+                + [hit for hit in normal_hits if hit.chunk_id not in seen]
+            )[:limit]
 
         # Premium tier: Hybrid search
         fts_hits = await self.search_fts5(db, user_id, query, limit=limit)
         semantic_hits = await self.search_semantic(db, user_id, query, limit=limit)
 
-        # Merge and de-duplicate by chunk_id
+        # Merge results using reciprocal rank fusion. Raw FTS5 and cosine
+        # similarity scores are not comparable, so rank each result list first.
         combined = {}
-        for h in fts_hits:
-            combined[h.chunk_id] = h
+        rank_constant = 60
+        keyword_weight = 3.0
+        semantic_weight = 1.0
 
-        for sh in semantic_hits:
-            if sh.chunk_id in combined:
-                # Blend scores if matched in both
-                existing = combined[sh.chunk_id]
-                existing.score = round(max(existing.score, sh.score) * 1.15, 4)
+        for rank, hit in enumerate(fts_hits, start=1):
+            combined[hit.chunk_id] = (hit, keyword_weight / (rank_constant + rank))
+
+        for rank, hit in enumerate(semantic_hits, start=1):
+            contribution = semantic_weight / (rank_constant + rank)
+            if hit.chunk_id in combined:
+                existing, score = combined[hit.chunk_id]
+                combined[hit.chunk_id] = (existing, score + contribution)
                 existing.match_type = "HYBRID (FTS5 + SEMANTIC)"
             else:
-                combined[sh.chunk_id] = sh
+                combined[hit.chunk_id] = (hit, contribution)
 
-        ranked = sorted(combined.values(), key=lambda x: x.score, reverse=True)
-        return ranked[:limit]
+        ranked = sorted(combined.values(), key=lambda item: item[1], reverse=True)
+        for hit, fused_score in ranked:
+            hit.score = round(fused_score, 4)
+
+        normal_hits = [hit for hit, _ in ranked[:limit]]
+        if not first_page_hits:
+            return normal_hits
+        seen = {hit.chunk_id for hit in first_page_hits}
+        return (
+            first_page_hits
+            + [hit for hit in normal_hits if hit.chunk_id not in seen]
+        )[:limit]
 
     def synthesize_grounded_answer(self, query: str, hits: List[SearchHit]) -> Dict[str, Any]:
         """

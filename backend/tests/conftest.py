@@ -144,3 +144,12 @@ async def client(
             yield async_client
     finally:
         app.dependency_overrides.pop(get_db, None)
+
+@pytest.fixture(autouse=True)
+def disable_live_gemma_in_tests(monkeypatch):
+    """Keep tests deterministic and prevent calls to a running local LLM."""
+    async def no_live_inference(query, evidence):
+        return None
+
+    from backend.app.api import ai
+    monkeypatch.setattr(ai, "generate_grounded_answer", no_live_inference)

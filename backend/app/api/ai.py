@@ -28,6 +28,7 @@ from backend.app.services.extractor import (
 )
 from backend.app.services.embedding import embedding_service
 from backend.app.services.search import search_service
+from backend.app.services.gemma import generate_grounded_answer
 
 router = APIRouter(prefix="/ai", tags=["Local AI"])
 
@@ -245,8 +246,21 @@ async def query_vault_documents(
             )
             mode_used = "HYBRID (FTS5 + SEMANTIC)" if current_user.plan_type == "PREMIUM" else "FTS5_KEYWORD"
 
-        # Synthesize grounded answer
+        # Synthesize a grounded answer; citations always come from server-side retrieval.
         answer_data = search_service.synthesize_grounded_answer(payload.query, hits)
+
+        # Local Gemma generation is a PREMIUM capability and requires retrieved evidence.
+        # If the local model is unavailable, retain the deterministic grounded fallback.
+        if current_user.plan_type == "PREMIUM" and hits:
+            generated_answer = await generate_grounded_answer(
+                payload.query,
+                [
+                    (hit.filename, hit.page_number, hit.content)
+                    for hit in hits
+                ],
+            )
+            if generated_answer:
+                answer_data["answer"] = generated_answer
 
         citation_responses = [
             CitationResponse(
