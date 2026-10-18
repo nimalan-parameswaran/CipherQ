@@ -81,7 +81,11 @@ def live_server():
 def browser_instance():
     """Launch system Chrome without downloading additional browser binaries."""
     pw = sync_playwright().start()
-    browser = pw.chromium.launch(channel="chrome", headless=True)
+    browser = pw.chromium.launch(
+        executable_path="/usr/bin/chromium",
+        headless=True,
+        args=["--no-sandbox"],
+    )
     yield browser
     browser.close()
     pw.stop()

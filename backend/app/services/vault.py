@@ -56,7 +56,7 @@ def unwrap_dek(wrapped_dek_blob: bytes, master_kek: bytes) -> bytes:
 
 def sanitize_filename(original_name: str) -> str:
     """Sanitize original filename to strip directory traversal characters."""
-    filename = Path(original_name).name.strip()
+    filename = Path(original_name.replace("\\", "/")).name.strip()
     return filename if filename else "untitled_document"
 
 
