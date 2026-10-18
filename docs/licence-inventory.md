@@ -8,26 +8,27 @@
 
 | Component Name | Exact Version (Tested / Pinned) | Source Repository / Homepage | SPDX Licence Identifier | Attribution & Notice Obligations | Redistribution & Usage Notes |
 | :--- | :--- | :--- | :--- | :--- | :--- |
-| **FastAPI** | `0.115.11` | https://github.com/fastapi/fastapi | `MIT` | Include MIT copyright notice | Permissive; standard web framework |
-| **Starlette** | `0.48.0` | https://github.com/encode/starlette | `BSD-3-Clause` | Include BSD 3-clause copyright notice | ASGI framework underlying FastAPI |
-| **Uvicorn** | `0.34.0` | https://github.com/encode/uvicorn | `BSD-3-Clause` | Include BSD 3-clause copyright notice | ASGI production web server |
-| **Pydantic** | `2.10.6` | https://github.com/pydantic/pydantic | `MIT` | Include MIT copyright notice | Data parsing and validation |
-| **Pydantic-Settings** | `2.8.1` | https://github.com/pydantic/pydantic-settings | `MIT` | Include MIT copyright notice | Environment configuration management |
-| **SQLAlchemy** | `2.0.38` | https://github.com/sqlalchemy/sqlalchemy | `MIT` | Include MIT copyright notice | Database ORM and query builder |
-| **aiosqlite** | `0.21.0` | https://github.com/omnilib/aiosqlite | `MIT` | Include MIT copyright notice | Async SQLite interface |
-| **argon2-cffi** | `23.1.0` | https://github.com/hynek/argon2-cffi | `MIT` | Include MIT copyright notice | Password hashing (wraps reference Argon2) |
-| **cryptography** | `44.0.2` | https://github.com/pyca/cryptography | `Apache-2.0` OR `BSD-3-Clause` | Dual-licensed; include Apache-2.0 / BSD notice | OpenSSL / primitives provider |
+| **FastAPI** | `0.146.0` | https://github.com/fastapi/fastapi | `MIT` | Include MIT copyright notice | Permissive; standard web framework |
+| **Starlette** | `1.9.0` | https://github.com/encode/starlette | `BSD-3-Clause` | Include BSD 3-clause copyright notice | ASGI framework underlying FastAPI |
+| **Uvicorn** | `0.54.0` | https://github.com/encode/uvicorn | `BSD-3-Clause` | Include BSD 3-clause copyright notice | ASGI production web server |
+| **Pydantic** | `2.14.1` | https://github.com/pydantic/pydantic | `MIT` | Include MIT copyright notice | Data parsing and validation |
+| **Pydantic-Settings** | `2.16.0` | https://github.com/pydantic/pydantic-settings | `MIT` | Include MIT copyright notice | Environment configuration management |
+| **SQLAlchemy** | `2.1.5` | https://github.com/sqlalchemy/sqlalchemy | `MIT` | Include MIT copyright notice | Database ORM and query builder |
+| **aiosqlite** | `0.22.1` | https://github.com/omnilib/aiosqlite | `MIT` | Include MIT copyright notice | Async SQLite interface |
+| **argon2-cffi** | `25.1.0` | https://github.com/hynek/argon2-cffi | `MIT` | Include MIT copyright notice | Password hashing (wraps reference Argon2) |
+| **cryptography** | `50.0.2` | https://github.com/pyca/cryptography | `Apache-2.0` OR `BSD-3-Clause` | Dual-licensed; include Apache-2.0 / BSD notice | OpenSSL / primitives provider |
 | **PyNaCl** | `1.6.2` | https://github.com/pyca/pynacl | `Apache-2.0` | Include Apache 2.0 notice (wraps libsodium) | Selected Streaming AEAD engine |
 | **libsodium** | *(bundled via PyNaCl)* | https://github.com/jedisct1/libsodium | `ISC` | Include ISC copyright notice | Underlying C cryptographic library |
-| **python-multipart** | `0.0.20` | https://github.com/Kludex/python-multipart | `Apache-2.0` | Include Apache 2.0 notice | Multipart form-data streaming parser |
-| **email-validator** | `2.2.0` | https://github.com/JoshData/python-email-validator | `Unlicense` / `MIT` | Public domain / MIT | Email validation for Pydantic |
-| **psutil** | `7.0.0` | https://github.com/giampaolo/psutil | `BSD-3-Clause` | Include BSD 3-clause notice | System RAM & CPU resource monitoring |
+| **python-multipart** | `0.0.32` | https://github.com/Kludex/python-multipart | `Apache-2.0` | Include Apache 2.0 notice | Multipart form-data streaming parser |
+| **email-validator** | `2.3.0` | https://github.com/JoshData/python-email-validator | `Unlicense` / `MIT` | Public domain / MIT | Email validation for Pydantic |
+| **psutil** | `7.2.2` | https://github.com/giampaolo/psutil | `BSD-3-Clause` | Include BSD 3-clause notice | System RAM & CPU resource monitoring |
 | **pypdf** | `6.21.1` | https://github.com/py-pdf/pypdf | `BSD-3-Clause` | Include BSD 3-clause notice | In-memory PDF text extraction |
 | **numpy** | `2.5.4` | https://github.com/numpy/numpy | `BSD-3-Clause` | Include BSD 3-clause notice | Vector arrays & cosine similarity |
 | **onnxruntime** | `1.31.0` | https://github.com/microsoft/onnxruntime | `MIT` | Include MIT copyright notice | Local CPU vector embedding inference |
-| **pytest** | `8.3.5` | https://github.com/pytest-dev/pytest | `MIT` | Development dependency only | Automated testing framework |
-| **pytest-asyncio** | `0.25.3` | https://github.com/pytest-dev/pytest-asyncio | `Apache-2.0` | Development dependency only | Pytest asynchronous execution runner |
+| **pytest** | `9.1.1` | https://github.com/pytest-dev/pytest | `MIT` | Development dependency only | Automated testing framework |
+| **pytest-asyncio** | `1.4.0` | https://github.com/pytest-dev/pytest-asyncio | `Apache-2.0` | Development dependency only | Pytest asynchronous execution runner |
 | **httpx** | `0.28.1` | https://github.com/encode/httpx | `BSD-3-Clause` | Development dependency only | Async HTTP testing client |
+| **Playwright** | `1.64.0` | https://github.com/microsoft/playwright-python | `Apache-2.0` | Development dependency only | Browser-level end-to-end test automation |
 
 ---
 

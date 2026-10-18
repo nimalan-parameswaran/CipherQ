@@ -1,21 +1,22 @@
 # CipherQ Pinned Backend Dependencies
-# Tested on Python 3.13.7 (64-bit) on Windows 11 and Debian Linux targets
+# Validated on Python 3.12+ (64-bit) for Linux and Windows targets
 
-fastapi==0.115.11
-uvicorn[standard]==0.34.0
-pydantic==2.10.6
-pydantic-settings==2.8.1
-sqlalchemy==2.0.38
-aiosqlite==0.21.0
-argon2-cffi==23.1.0
-cryptography==44.0.2
+fastapi==0.146.0
+uvicorn[standard]==0.54.0
+pydantic==2.14.1
+pydantic-settings==2.16.0
+sqlalchemy==2.1.5
+aiosqlite==0.22.1
+argon2-cffi==25.1.0
+cryptography==50.0.2
 pynacl==1.6.2
-python-multipart==0.0.20
-email-validator==2.2.0
-psutil==7.0.0
-pytest==8.3.5
-pytest-asyncio==0.25.3
+python-multipart==0.0.32
+email-validator==2.3.0
+psutil==7.2.2
+pytest==9.1.1
+pytest-asyncio==1.4.0
 httpx==0.28.1
 pypdf==6.21.1
 numpy==2.5.4
 onnxruntime==1.31.0
+playwright==1.64.0
