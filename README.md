@@ -1,6 +1,6 @@
 # CipherQ — Your Private Cloud. Your Personal AI.
 
-[![Version](https://img.shields.io/badge/version-1.0.0--rc1-blue.svg)](https://github.com/nimal/cipherq)
+[![Version](https://img.shields.io/badge/version-1.0.0--rc1-blue.svg)](https://github.com/nimalan-parameswaran/CipherQ)
 [![Tests](https://img.shields.io/badge/tests-57%20passed%20%28100%25%29-brightgreen.svg)](docs/test-results.md)
 [![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue.svg)](backend/requirements.txt)
 [![License](https://img.shields.io/badge/licence-MIT-green.svg)](LICENSE)
@@ -10,7 +10,7 @@
 
 **CipherQ** is an open-source, resource-conscious private cloud vault with server-managed authenticated encryption and on-demand local AI document search and Q&A. It is engineered to run on consumer laptops as well as embedded single-board computers like the **Arduino UNO Q** (Quad-Core ARM Cortex-A53, 4 GB RAM, 32 GB eMMC) running Debian 12 (Bookworm) Linux.
 
-The frontend is deployed as a **static site on GitHub Pages**. The backend runs on your **Arduino UNO Q** and is securely reachable from anywhere in the world via **Cloudflare Tunnel** — no port forwarding, no exposed IPs, no router changes.
+The frontend is a static site that can be deployed to **GitHub Pages**. The backend remains a separate FastAPI service with local encrypted storage and AI inference. A public HTTPS endpoint and secure tunnel are required before backend-dependent features can be used remotely; this repository does not assume that the Arduino is publicly reachable.
 
 ---
 
@@ -19,19 +19,19 @@ The frontend is deployed as a **static site on GitHub Pages**. The backend runs 
 ```
 ┌─────────────────────────────────────────────────────┐
 │  Browser — anywhere in the world                    │
-│  https://YOUR-USERNAME.github.io/CipherQ/           │
+│  https://nimalan-parameswaran.github.io/CipherQ/    │
 │                                                     │
 │  Static Frontend (GitHub Pages CDN)                 │
 │  ├── HTML / CSS / ES Modules (no build step)        │
-│  ├── js/config.js  ← edit this for your tunnel URL  │
+│  ├── js/config.js  ← set approved HTTPS API origin   │
 │  └── HttpOnly cookie + CSRF token session handling  │
 └──────────────────────┬──────────────────────────────┘
                        │ HTTPS API requests
                        │ credentials: include
                        ▼
 ┌─────────────────────────────────────────────────────┐
-│  Cloudflare Edge (Global CDN / TLS termination)     │
-│  https://cipherq.yourdomain.com                     │
+│  HTTPS public backend endpoint                      │
+│  (configured separately; not included by default)   │
 └──────────────────────┬──────────────────────────────┘
                        │ Encrypted outbound tunnel
                        │ (no inbound port required)
@@ -39,7 +39,7 @@ The frontend is deployed as a **static site on GitHub Pages**. The backend runs 
 ┌─────────────────────────────────────────────────────┐
 │  Arduino UNO Q  (Debian 12 · ARM Cortex-A53)        │
 │                                                     │
-│  cloudflared ──────► FastAPI  127.0.0.1:8000        │
+│  FastAPI  127.0.0.1:8000                           │
 │                           │                         │
 │                           ├── Auth (Argon2id)        │
 │                           ├── Encrypted Vault        │
@@ -171,6 +171,7 @@ CipherQ/
 │   ├── architecture.md      # Comprehensive technical architecture
 │   ├── benchmark-results.md # Measured empirical throughput and memory benchmarks
 │   ├── deployment-guide.md  # Production deployment & disaster recovery guide
+│   ├── github-pages-frontend.md # GitHub Pages and remote API setup
 │   ├── hardware-readiness.md# Target compatibility & resource budgets for Arduino UNO Q
 │   ├── licence-inventory.md # 100% permissive open-source license audit
 │   ├── PRD.md               # Product Requirements Document
@@ -185,209 +186,161 @@ CipherQ/
     ├── 404.html              # GitHub Pages 404 fallback
     ├── css/styles.css        # Design system (dark workspace theme)
     └── js/
-        ├── config.js         # ← Edit this: set your Cloudflare Tunnel URL
+        ├── config.js         # ← Set approved HTTPS API origin for production
         ├── api.js            # API client (same-origin dev + cross-origin prod)
         └── app.js            # Page controllers and UI logic
 ```
 
 ---
 
-## Quickstart: Local Laptop Development
+## Setup and running
 
-No tunnel, no GitHub Pages — everything runs on `localhost:8000`.
+Choose the workflow that matches your goal. The local workflow below does not
+connect to or modify the Arduino. The GitHub Pages workflow publishes only
+static frontend files; it does not publish the backend, database, keys, model,
+or user documents.
 
-### 1. Prerequisites
+### Local development: backend and frontend together
+
+This is the supported development path when FastAPI serves the static frontend
+and `/api/v1` from the same origin. No public API URL or CORS configuration is
+needed.
+
+#### 1. Prerequisites
+
 - Python 3.11, 3.12, or 3.13 (64-bit)
 - Git
 
-### 2. Clone and Setup Environment
+#### 2. Clone and set up the environment
+
 ```bash
-git clone https://github.com/YOUR-USERNAME/CipherQ.git
+git clone https://github.com/nimalan-parameswaran/CipherQ.git
 cd CipherQ
-
-# Create and activate virtual environment
 python -m venv .venv
-
-# On Linux / macOS:
-source .venv/bin/activate
-# On Windows (PowerShell):
-.venv\Scripts\Activate.ps1
-
-# Install pinned dependencies
-pip install --upgrade pip
-pip install -r backend/requirements.txt
 ```
 
-### 3. Run the Test Suite
+Activate the environment:
+
 ```bash
-# Execute full automated test suite (57 tests)
+# Linux / macOS
+source .venv/bin/activate
+
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+```
+
+Install dependencies:
+
+```bash
+python -m pip install --upgrade pip
+python -m pip install -r backend/requirements.txt
+```
+
+#### 3. Run tests
+
+```bash
 python -m pytest backend/tests/ -v --ignore=backend/tests/test_browser_e2e.py
 ```
 
-### 4. Start the Local Server
+#### 4. Start the local application
+
 ```bash
 python -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Open your browser to:
-- **Web Vault UI**: `http://localhost:8000`
-- **Interactive API Documentation**: `http://localhost:8000/docs`
-- **Health Check**: `http://localhost:8000/api/v1/health`
+Open:
 
-> **Note:** `frontend/js/config.js` has `window.CIPHERQ_API_BASE_URL = ""` by default. This means all API requests use the relative path `/api/v1` — the same origin as FastAPI. No configuration change is needed for local development.
+- Web UI: `http://localhost:8000`
+- API documentation: `http://localhost:8000/docs`
+- Health check: `http://localhost:8000/api/v1/health`
 
----
+Keep `window.CIPHERQ_API_BASE_URL = ""` in
+[`frontend/js/config.js`](frontend/js/config.js). Requests then use the
+same-origin `/api/v1` path.
 
-## Worldwide Access: GitHub Pages + Cloudflare Tunnel
+#### 5. Preview only the static frontend
 
-This setup makes CipherQ accessible from **any device, anywhere**, while the backend and all data stay exclusively on your Arduino UNO Q.
-
-```
-Browser → GitHub Pages (frontend) → Cloudflare Tunnel → Arduino FastAPI (backend)
-```
-
-### Prerequisites
-- A **GitHub account** (for GitHub Pages)
-- A **free Cloudflare account** and a domain (or use a free `trycloudflare.com` URL for testing)
-- Arduino UNO Q with FastAPI already running on `127.0.0.1:8000`
-
----
-
-### Step 1 — Install Cloudflare Tunnel on the Arduino
-
-> Run these commands **on the Arduino UNO Q** (not your laptop):
+This checks the public UI without pretending that backend features work:
 
 ```bash
-# Download cloudflared for ARM64 (Arduino UNO Q's architecture)
-wget https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-linux-arm64 -O cloudflared
-chmod +x cloudflared
-
-# Quick test (temporary URL — changes on restart, for testing only):
-./cloudflared tunnel --url http://127.0.0.1:8000
+cd frontend
+python -m http.server 4173
 ```
 
-For a **permanent hostname**, create a named tunnel in the [Cloudflare Zero Trust dashboard](https://one.dash.cloudflare.com/) → Networks → Tunnels → Create tunnel. Configure the public hostname to forward to `http://127.0.0.1:8000`.
+Open `http://127.0.0.1:4173/`. With no configured API URL, the UI displays a
+backend-unavailable message for API-dependent behavior. Stop the server with
+`Ctrl+C`.
 
-> ⚠️ The Gemma inference port (`127.0.0.1:8081`) is **never forwarded** by the tunnel. AI requests continue through FastAPI's authorized routes only.
+### GitHub Pages frontend deployment
 
----
+The expected project-site URL is:
 
-### Step 2 — Harden the Arduino Environment
+`https://nimalan-parameswaran.github.io/CipherQ/`
 
-> Edit `/etc/cipherq/cipherq.env` **on the Arduino** and add / update these lines:
+The workflow in `.github/workflows/pages.yml` stages only `frontend/`, removes
+the unused mock-data file, and deploys the artifact with GitHub Pages Actions.
 
-```bash
-ENVIRONMENT=production
-COOKIE_SECURE=True
-COOKIE_SAMESITE=none        # Required for cross-site cookies (GitHub Pages ≠ Tunnel hostname)
-ADMIN_TOKEN=<run: openssl rand -hex 32>
-```
+1. Review the local changes.
+2. In **Settings → Pages**, set **Source** to **GitHub Actions**.
+3. Do not use the branch/folder Pages source with this workflow.
+4. Push the reviewed commit to `main`, or run the workflow manually.
 
-> ⚠️ `COOKIE_SAMESITE=none` **must** be paired with `COOKIE_SECURE=True`. Without it, browsers silently drop the session cookie.
-
----
-
-### Step 3 — Add CORS Middleware to the Backend
-
-> Apply this change to `backend/app/main.py` **on the Arduino**, then restart FastAPI.
-
-After the existing imports, add:
-
-```python
-from fastapi.middleware.cors import CORSMiddleware
-```
-
-After `app = FastAPI(...)`, add:
-
-```python
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=[
-        "https://YOUR-USERNAME.github.io",  # ← your exact GitHub Pages origin
-    ],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "X-CSRF-Token", "X-Admin-Token"],
-    expose_headers=["Content-Disposition"],
-    max_age=86400,
-)
-```
-
-Restart FastAPI:
-```bash
-sudo systemctl restart cipherq
-```
-
-> ⚠️ Never use `allow_origins=["*"]` with `allow_credentials=True` — browsers reject it.
-
----
-
-### Step 4 — Configure the Frontend
-
-> Do this **on your laptop**, then push to GitHub.
-
-Edit **one line** in [`frontend/js/config.js`](frontend/js/config.js):
+Configure the public API origin in `frontend/js/config.js` only after an
+approved HTTPS endpoint exists:
 
 ```js
-// Set your permanent Cloudflare Tunnel HTTPS URL:
-window.CIPHERQ_API_BASE_URL = "https://cipherq.yourdomain.com";
+window.CIPHERQ_API_BASE_URL = "https://api.example.com";
 ```
 
----
+Use the origin only; do not add `/api/v1`. The client appends that path and
+preserves the existing authentication, credentials, CSRF, upload, download,
+indexing, AI, account, and plan API contracts. This public value must never
+contain passwords, tokens, private keys, master keys, or private LAN addresses.
 
-### Step 5 — Deploy to GitHub Pages
+If the value is empty on GitHub Pages, backend-dependent features remain
+unavailable and the UI reports why. See
+[`docs/github-pages-frontend.md`](docs/github-pages-frontend.md) for the
+complete Pages, tunnel, CORS, cookie, and production security checklist.
 
-```bash
-# Commit the config change
-git add frontend/js/config.js
-git commit -m "feat: set production API URL for GitHub Pages deployment"
-git push origin main
+### Remote backend access: later phase
+
+GitHub Pages cannot make a private Arduino backend publicly reachable. The
+required architecture is:
+
+```text
+Browser → GitHub Pages → HTTPS public API endpoint
+        → restricted secure tunnel → Arduino FastAPI
+        → existing local Gemma AI and encrypted storage
 ```
 
-In your **GitHub repository settings**:
-1. Go to **Settings → Pages**
-2. **Source**: Deploy from a branch
-3. **Branch**: `main` · **Folder**: `/frontend`
-4. Click **Save**
+Cloudflare Tunnel is a suitable later option, but it must be configured and
+approved separately. Do not forward the Gemma port, SSH, administrative
+interfaces, or arbitrary LAN destinations. Until the endpoint, tunnel, CORS,
+cookie settings, and external connectivity are tested, the frontend is not a
+globally working CipherQ service.
 
-Your live URL will be: `https://YOUR-USERNAME.github.io/CipherQ/`
-
----
-
-### Step 6 — Verify
-
-Open `https://YOUR-USERNAME.github.io/CipherQ/` in a browser. Check:
-- ✅ No CIPHERQ config errors in the browser console
-- ✅ API requests in DevTools → Network go to your tunnel URL, not `/api/v1`
-- ✅ Login works from a different device / network
-- ✅ File vault loads, uploads, and downloads work
-- ✅ AI queries return results
+For cross-origin operation, the backend must allow the exact origin
+`https://nimalan-parameswaran.github.io` with credentialed CORS. CORS compares
+origins, not the `/CipherQ/` path. The backend also needs secure,
+cross-site-compatible cookies. The required backend changes are documented but
+are intentionally not applied by the frontend deployment work.
 
 ---
 
-### How Cross-Origin Auth Works
+## Production backend deployment on Arduino UNO Q (fresh installation only)
 
-When the frontend (GitHub Pages) and backend (Cloudflare Tunnel) are on different origins, browsers enforce strict cross-site cookie rules. CipherQ handles this automatically:
+If FastAPI, encrypted storage, authentication, and local AI are already working
+on an Arduino UNO Q, do **not** rerun the provisioning commands below as part
+of the GitHub Pages setup. Do not install packages, restart services, alter
+networking, change backend code, or modify data and key files without a
+separate approved maintenance procedure.
 
-| Mechanism | Local Dev | Production (GitHub Pages) |
-|---|---|---|
-| API base URL | `/api/v1` (relative) | `https://tunnel.domain.com/api/v1` |
-| `fetch()` credentials | `same-origin` | `include` |
-| XHR `withCredentials` | `false` | `true` |
-| Session cookie `SameSite` | `Lax` | `None` |
-| Session cookie `Secure` | `false` | `true` (HTTPS required) |
-| CORS middleware | Not needed | Required (explicit origin) |
-
-The [`frontend/js/api.js`](frontend/js/api.js) client switches modes automatically based on whether `window.CIPHERQ_API_BASE_URL` is set.
-
----
-
-## Production Deployment on Arduino UNO Q (Debian 12)
+The following deployment section is for a fresh backend installation only.
 
 For a fresh Arduino deployment (no existing installation):
 
 ```bash
-git clone https://github.com/YOUR-USERNAME/CipherQ.git /tmp/cipherq
+git clone https://github.com/nimalan-parameswaran/CipherQ.git /tmp/cipherq
 cd /tmp/cipherq
 sudo bash deployment/scripts/deploy.sh
 ```
@@ -454,12 +407,12 @@ Measured on a 12th Gen Intel Core i7 host with `PyNaCl 1.6.2` (libsodium engine)
 
 ## Security Disclosures & Honest Operational Boundaries
 
-1. **Transport Encryption**: The Cloudflare Tunnel provides TLS end-to-end from the browser to Cloudflare's edge, and an encrypted tunnel from Cloudflare to the Arduino. The FastAPI ↔ cloudflared hop is loopback-only (`127.0.0.1`) and never exposed to the network.
-2. **Cross-Site Cookies**: When using GitHub Pages + Cloudflare Tunnel, the session cookie must use `SameSite=None; Secure`. This is enforced by setting `COOKIE_SAMESITE=none` and `COOKIE_SECURE=True` in the production environment file. CSRF token validation remains active.
+1. **Transport Encryption**: When a reviewed HTTPS endpoint and secure tunnel are configured, TLS protects browser-to-edge traffic and the tunnel protects the edge-to-Arduino connection. The FastAPI listener remains loopback-only (`127.0.0.1`) and is never exposed directly.
+2. **Cross-Site Cookies**: When using GitHub Pages with a separate HTTPS API origin, the session cookie must use `SameSite=None; Secure`. This requires an approved backend configuration change; CSRF token validation remains active.
 3. **Volatile Memory & Plaintext Boundaries**: In managed runtimes (CPython), garbage collection means volatile heap memory cannot be wiped with 100% cryptographic certainty. CipherQ explicitly closes byte buffers and triggers `gc.collect()`. Absolute memory confidentiality requires full-disk swap encryption at the OS level.
 4. **Logical Deletion vs. Flash Wear-Leveling**: File deletion unlinks the ciphertext from the filesystem, but eMMC wear-leveling may retain physical flash blocks. Logical deletion does not guarantee physical flash erasure.
 5. **Zero External Telemetry**: CipherQ makes no outbound network connections except through Cloudflare Tunnel to serve your own requests. No analytics, no cloud AI calls, no external dependencies at runtime.
-6. **Quick Tunnel URLs Are Temporary**: A `trycloudflare.com` URL changes every restart and is unsuitable as a stable endpoint. Use a named Cloudflare Tunnel with a permanent hostname for production.
+6. **Tunnel Availability**: A quick tunnel URL is temporary and unsuitable as a stable endpoint. Use a named tunnel with a permanent hostname only after reviewing its access policy and origin configuration.
 
 ---
 

@@ -1,5 +1,18 @@
 # CipherQ — Arduino UNO Q Production Deployment Guide
 
+> **Scope and safety:** This guide is for a fresh backend installation or an
+> explicitly approved maintenance window. It is not required to deploy the
+> static frontend to GitHub Pages. If an Arduino UNO Q already has a working
+> FastAPI service, encrypted vault, authentication, and local AI, do not run
+> the provisioning, restart, restore, or configuration commands in this guide
+> without separate backup and change approval.
+
+The frontend deployment is documented separately in
+[`github-pages-frontend.md`](github-pages-frontend.md). GitHub Pages publishes
+only static files and cannot make a private Arduino backend publicly reachable.
+Remote access requires a separately configured HTTPS endpoint and restricted
+outbound tunnel.
+
 ## 1. Overview and Architecture
 
 This guide covers the deployment of **CipherQ** on Debian 12 (Bookworm) Linux, targeting the **Arduino UNO Q** single-board computer (Quad-Core ARM Cortex-A53, 4GB RAM, 32GB eMMC).
@@ -68,7 +81,7 @@ CipherQ provides an automated provisioning script that installs dependencies, cr
 
 ```bash
 # 1. Clone repository to temporary staging
-git clone https://github.com/nimal/cipherq.git /tmp/cipherq
+git clone https://github.com/nimalan-parameswaran/CipherQ.git /tmp/cipherq
 cd /tmp/cipherq
 
 # 2. Run automated installer with root privileges

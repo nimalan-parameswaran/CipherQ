@@ -821,7 +821,23 @@ async function initAccount(user) {
 
 async function initApp() {
   ensureAuthModal();
-  const user = await api.getMe();
+  let user;
+  try {
+    user = await api.getMe();
+  } catch (error) {
+    const main = document.querySelector("main");
+    if (main) {
+      main.insertAdjacentHTML("afterbegin", `
+        <div class="container section" role="alert">
+          <div class="alert alert-danger">
+            <strong>Backend unavailable.</strong> ${escapeHtml(error.message)}
+          </div>
+        </div>`);
+    }
+    updateNavbar(null);
+    setupMobileNav();
+    return;
+  }
   updateNavbar(user);
   setupMobileNav();
 

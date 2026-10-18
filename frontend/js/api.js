@@ -23,7 +23,12 @@ class CipherQAPIClient {
     //      This is local development mode (FastAPI serves both frontend and API).
     const configured = (typeof window !== "undefined" && window.CIPHERQ_API_BASE_URL) || "";
 
+    this.configurationError = "";
+
     if (configured) {
+      if (!/^https:\/\//i.test(configured)) {
+        this.configurationError = "The configured CipherQ API URL must use HTTPS.";
+      }
       // Strip trailing slash for consistency
       this.baseUrl = configured.replace(/\/$/, "") + "/api/v1";
       this._crossOrigin = true;
@@ -32,21 +37,28 @@ class CipherQAPIClient {
       this._crossOrigin = false;
     }
 
-    // Warn loudly if we're on a non-localhost origin without a configured API URL.
-    // This prevents silent failure where a deployed frontend hits /api/v1 on the
-    // static host (e.g. GitHub Pages), which has no backend and returns 404.
+    // A static host cannot serve the API. Do not silently fall back to its
+    // relative /api/v1 path when the app is deployed away from local development.
     if (
       typeof window !== "undefined" &&
       !configured &&
       window.location.hostname !== "localhost" &&
       window.location.hostname !== "127.0.0.1"
     ) {
-      console.error(
-        "[CipherQ] CONFIGURATION ERROR: The frontend appears to be deployed to a " +
-        "non-localhost origin (" + window.location.hostname + ") but " +
-        "window.CIPHERQ_API_BASE_URL is not set in frontend/js/config.js. " +
-        "API requests will fail. Set CIPHERQ_API_BASE_URL to your Cloudflare Tunnel URL."
-      );
+      this.configurationError =
+        "The CipherQ backend URL is not configured for this deployed website. " +
+        "Set CIPHERQ_API_BASE_URL in frontend/js/config.js to the approved HTTPS API origin.";
+      console.error(`[CipherQ] CONFIGURATION ERROR: ${this.configurationError}`);
+    }
+
+    if (this.configurationError) {
+      this.baseUrl = "";
+    }
+  }
+
+  _assertConfigured() {
+    if (this.configurationError) {
+      throw new Error(this.configurationError);
     }
   }
 
@@ -83,6 +95,7 @@ class CipherQAPIClient {
   }
 
   async register(email, password, planType = "FREE") {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/auth/register`, this._fetchOptions({
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -96,6 +109,7 @@ class CipherQAPIClient {
   }
 
   async login(email, password) {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/auth/login`, this._fetchOptions({
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -111,6 +125,7 @@ class CipherQAPIClient {
   }
 
   async logout() {
+    this._assertConfigured();
     const csrf = this.getCSRFToken();
     try {
       await fetch(`${this.baseUrl}/auth/logout`, this._fetchOptions({
@@ -123,6 +138,7 @@ class CipherQAPIClient {
   }
 
   async getMe() {
+    this._assertConfigured();
     try {
       const res = await fetch(`${this.baseUrl}/auth/me`, this._fetchOptions({
         headers: { "X-CSRF-Token": this.getCSRFToken() }
@@ -140,11 +156,14 @@ class CipherQAPIClient {
       }
       return data;
     } catch (e) {
-      return null;
+      throw new Error(
+        "The CipherQ backend could not be reached. Check the HTTPS API URL and tunnel status."
+      );
     }
   }
 
   async getUsage() {
+    this._assertConfigured();
     try {
       const res = await fetch(`${this.baseUrl}/auth/usage`, this._fetchOptions({
         headers: { "X-CSRF-Token": this.getCSRFToken() }
@@ -152,11 +171,14 @@ class CipherQAPIClient {
       if (!res.ok) return null;
       return await res.json();
     } catch (e) {
-      return null;
+      throw new Error(
+        "The CipherQ backend could not be reached. Check the HTTPS API URL and tunnel status."
+      );
     }
   }
 
   async listFiles() {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/files`, this._fetchOptions({
       headers: { "X-CSRF-Token": this.getCSRFToken() }
     }));
@@ -171,6 +193,11 @@ class CipherQAPIClient {
   }
 
   uploadFile(fileObj, onProgress) {
+    try {
+      this._assertConfigured();
+    } catch (error) {
+      return Promise.reject(error);
+    }
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${this.baseUrl}/files`, true);
@@ -216,6 +243,7 @@ class CipherQAPIClient {
   }
 
   async downloadFile(fileId, filename) {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/files/${fileId}/download`, this._fetchOptions());
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Download failed." }));
@@ -237,6 +265,7 @@ class CipherQAPIClient {
   }
 
   async deleteFile(fileId) {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/files/${fileId}`, this._fetchOptions({
       method: "DELETE",
       headers: { "X-CSRF-Token": this.getCSRFToken() }
@@ -249,6 +278,7 @@ class CipherQAPIClient {
   }
 
   async indexFile(fileId) {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/ai/index/${fileId}`, this._fetchOptions({
       method: "POST",
       headers: { "X-CSRF-Token": this.getCSRFToken() }
@@ -261,6 +291,7 @@ class CipherQAPIClient {
   }
 
   async unindexFile(fileId) {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/ai/index/${fileId}`, this._fetchOptions({
       method: "DELETE",
       headers: { "X-CSRF-Token": this.getCSRFToken() }
@@ -273,6 +304,7 @@ class CipherQAPIClient {
   }
 
   async queryAI(query, limit = 5) {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/ai/query`, this._fetchOptions({
       method: "POST",
       headers: {
@@ -289,6 +321,7 @@ class CipherQAPIClient {
   }
 
   async adminChangePlan(email, newPlan, adminToken, reason = "dev_admin_ui") {
+    this._assertConfigured();
     const res = await fetch(`${this.baseUrl}/admin/users/plan`, this._fetchOptions({
       method: "POST",
       headers: {
