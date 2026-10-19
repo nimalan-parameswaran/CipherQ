@@ -1,28 +1,65 @@
 :root {
-  --ink: #111713;
-  --ink-soft: #1d2a22;
-  --surface: #f1f0e9;
-  --surface-raised: #fffefa;
-  --surface-dark: #14251d;
-  --line: #d8d8cd;
-  --line-dark: #36503f;
-  --muted: #68736a;
-  --muted-dark: #b9c8bd;
-  --ivory: #fbfaf3;
-  --emerald: #0d7656;
-  --emerald-light: #d8eee1;
-  --emerald-deep: #07513e;
-  --gold: #b58a43;
-  --gold-light: #f3e7c9;
-  --danger: #a5443b;
-  --warning: #9a6a1e;
-  --shadow: 0 22px 70px rgba(16, 38, 25, .12);
-  --shadow-soft: 0 10px 30px rgba(16, 38, 25, .06);
-  --radius: 14px;
-  --radius-sm: 9px;
+  /* Theme-Aware Core Palette */
+  --bg-main: #f1f0e9;
+  --bg-surface: #fffefa;
+  --bg-surface-raised: #fbfaf3;
+  --bg-surface-sunken: #e8e8e0;
+  --text-main: #111713;
+  --text-soft: #1d2a22;
+  --text-muted: #68736a;
+  --text-dim: #aab2a7;
+  --accent-primary: #0d7656;
+  --accent-primary-light: #d8eee1;
+  --accent-primary-deep: #07513e;
+  --accent-secondary: #b58a43;
+  --accent-secondary-light: #f3e7c9;
+  --border-color: #d8d8cd;
+  --border-color-hover: rgba(13, 118, 86, 0.3);
+  --shadow-color: rgba(16, 38, 25, 0.12);
+  --shadow-soft: rgba(16, 38, 25, 0.06);
+  --radius: 16px;
+  --radius-sm: 10px;
   --font: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+
+  /* Tiered Shadow System */
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+  --shadow-md: 0 8px 24px rgba(0,0,0,0.12);
+  --shadow-lg: 0 16px 48px rgba(0,0,0,0.18);
+  --shadow-glow: 0 0 20px var(--accent-primary-light);
+
+  /* Typography Scale */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+
+  --danger: #a5443b;
+  --warning: #9a6a1e;
 }
+
+[data-theme="dark"] {
+  --bg-main: #0c0f0d;
+  --bg-surface: #121714;
+  --bg-surface-raised: #18221b;
+  --bg-surface-sunken: #080c0a;
+  --text-main: #f4f3ee;
+  --text-soft: #e2e8e0;
+  --text-muted: #9ba39b;
+  --text-dim: #677269;
+  --accent-primary: #10b981;
+  --accent-primary-light: rgba(16, 185, 129, 0.14);
+  --accent-primary-deep: #064e3b;
+  --accent-secondary: #f59e0b;
+  --accent-secondary-light: rgba(245, 158, 11, 0.12);
+  --border-color: rgba(255, 255, 255, 0.08);
+  --border-color-hover: rgba(16, 185, 129, 0.35);
+  --shadow-color: rgba(0, 0, 0, 0.35);
+  --shadow-soft: rgba(0, 0, 0, 0.2);
+}
+
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
 html { scroll-behavior: smooth; }
@@ -267,29 +304,29 @@ button { cursor: pointer; }
    ========================================================================== */
 
 body.workspace-body {
-  --cq-bg: #0c0f0d;
-  --cq-sidebar: #080b09;
-  --cq-surface: #121714;
-  --cq-surface-hover: #161e18;
-  --cq-surface-raised: #18221b;
-  --cq-surface-sunken: #080c0a;
-  --cq-border: rgba(255, 255, 255, 0.08);
-  --cq-border-subtle: rgba(255, 255, 255, 0.04);
-  --cq-border-hover: rgba(16, 185, 129, 0.35);
-  --cq-text: #f4f3ee;
-  --cq-text-muted: #9ba39b;
-  --cq-text-dim: #677269;
-  --cq-emerald: #10b981;
-  --cq-emerald-glow: rgba(16, 185, 129, 0.16);
-  --cq-emerald-hover: #34d399;
-  --cq-emerald-dark: #064e3b;
-  --cq-danger: #ef4444;
+  --cq-bg: var(--bg-main);
+  --cq-sidebar: var(--bg-surface-sunken);
+  --cq-surface: var(--bg-surface);
+  --cq-surface-hover: var(--bg-surface-raised);
+  --cq-surface-raised: var(--bg-surface-raised);
+  --cq-surface-sunken: var(--bg-surface-sunken);
+  --cq-border: var(--border-color);
+  --cq-border-subtle: var(--border-color);
+  --cq-border-hover: var(--border-color-hover);
+  --cq-text: var(--text-main);
+  --cq-text-muted: var(--text-muted);
+  --cq-text-dim: var(--text-dim);
+  --cq-emerald: var(--accent-primary);
+  --cq-emerald-glow: var(--accent-primary-light);
+  --cq-emerald-hover: var(--accent-primary);
+  --cq-emerald-dark: var(--accent-primary-deep);
+  --cq-danger: var(--danger);
   --cq-danger-bg: rgba(239, 68, 68, 0.12);
   --cq-danger-border: rgba(239, 68, 68, 0.25);
-  --cq-warning: #f59e0b;
+  --cq-warning: var(--warning);
   --cq-info: #38bdf8;
-  --cq-radius: 12px;
-  --cq-radius-sm: 8px;
+  --cq-radius: var(--radius);
+  --cq-radius-sm: var(--radius-sm);
 
   background-color: var(--cq-bg);
   background-image:
@@ -2582,3 +2619,4 @@ body {
     text-transform: uppercase;
   }
 }
+\n/* Theme-Specific Refinements */\n.theme-icon { transition: transform 0.3s ease; }\n[data-theme="dark"] .theme-icon { transform: rotate(360deg); }\n\n#theme-toggle {\n  display: inline-flex;\n  align-items: center;\n  justify-content: center;\n  border-radius: 50%;\n  width: 36px;\n  height: 36px;\n  padding: 0;\n}

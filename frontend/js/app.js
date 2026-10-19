@@ -8,32 +8,19 @@ const isGreeting = (query) => /^(hi|hello|hey|hiya|good morning|good afternoon|g
 
 function applyTheme(theme) {
   const selected = theme === "dark" ? "dark" : "light";
-  document.body.dataset.theme = selected;
+  document.documentElement.setAttribute("data-theme", selected);
   localStorage.setItem("cipherq-theme", selected);
-  document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
-    button.textContent = selected === "dark" ? "☀ Light" : "☾ Dark";
-    button.setAttribute("aria-label", `Switch to ${selected === "dark" ? "light" : "dark"} theme`);
+  document.querySelectorAll("#theme-toggle").forEach((button) => {
+    // Theme toggle is now an icon, so we don't change text,
+    // but we could add a title or aria-label.
+    button.setAttribute("title", selected === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode");
   });
 }
 
 function setupThemeToggle() {
-  const existing = document.querySelector("[data-theme-toggle]");
-  if (existing) {
-    existing.onclick = () => applyTheme(document.body.dataset.theme === "dark" ? "light" : "dark");
-    return;
-  }
-
-  const host = document.body.classList.contains("workspace-body")
-    ? document.querySelector(".workspace-top .nav-actions")
-    : document.querySelector(".site-header .nav-actions");
-  if (!host) return;
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "btn btn-outline btn-sm theme-toggle";
-  button.dataset.themeToggle = "true";
-  host.prepend(button);
-  button.onclick = () => applyTheme(document.body.dataset.theme === "dark" ? "light" : "dark");
-  applyTheme(document.body.dataset.theme || "light");
+  document.querySelectorAll("#theme-toggle").forEach((button) => {
+    button.onclick = () => applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+  });
 }
 
 function formatBytes(bytes) {
@@ -918,6 +905,10 @@ async function initAccount(user) {
 }
 
 async function initApp() {
+  const savedTheme = localStorage.getItem("cipherq-theme") ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  applyTheme(savedTheme);
+  setupThemeToggle();
   ensureAuthModal();
   let user;
   try {
