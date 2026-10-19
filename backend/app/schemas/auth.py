@@ -10,7 +10,10 @@ from pydantic import BaseModel, EmailStr, Field, ConfigDict
 class UserRegisterRequest(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=10, max_length=128, description="Password must be between 10 and 128 characters")
-    plan_type: Literal["FREE", "PREMIUM", "CREATOR"] = "FREE"
+    plan_type: Literal[
+        "FREE", "PRIVATE_VAULT", "VAULT_AI",
+        "PREMIUM", "CREATOR",
+    ] = "FREE"
 
 
 class UserLoginRequest(BaseModel):

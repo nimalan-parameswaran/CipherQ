@@ -137,7 +137,7 @@ async def index_file(
             )
 
         # 6. If user is PREMIUM, generate local semantic vector embeddings
-        if current_user.plan_type in {"PREMIUM", "CREATOR"}:
+        if current_user.plan_type in {"VAULT_AI", "PREMIUM", "CREATOR"}:
             chunk_texts = [c.content for c in db_chunks]
             embedding_bytes_list = embedding_service.embed_chunks(chunk_texts)
 
@@ -227,10 +227,10 @@ async def query_vault_documents(
                 response_kind="CONVERSATION",
             )
         if requested_mode == "semantic":
-            if current_user.plan_type not in {"PREMIUM", "CREATOR"}:
+            if current_user.plan_type not in {"VAULT_AI", "PREMIUM", "CREATOR"}:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Semantic vector search requires an active PREMIUM or CREATOR subscription."
+                    detail="Semantic vector search requires the Vault + AI plan."
                 )
             hits = await search_service.search_semantic(
                 db=db,
@@ -256,14 +256,14 @@ async def query_vault_documents(
                 plan_type=current_user.plan_type,
                 limit=payload.limit
             )
-            mode_used = "HYBRID (FTS5 + SEMANTIC)" if current_user.plan_type in {"PREMIUM", "CREATOR"} else "FTS5_KEYWORD"
+            mode_used = "HYBRID (FTS5 + SEMANTIC)" if current_user.plan_type in {"VAULT_AI", "PREMIUM", "CREATOR"} else "FTS5_KEYWORD"
 
         # Synthesize a grounded answer; citations always come from server-side retrieval.
         answer_data = search_service.synthesize_grounded_answer(payload.query, hits)
 
         # Local Gemma generation is a PREMIUM capability and requires retrieved evidence.
         # If the local model is unavailable, retain the deterministic grounded fallback.
-        if current_user.plan_type in {"PREMIUM", "CREATOR"} and hits:
+        if current_user.plan_type in {"VAULT_AI", "PREMIUM", "CREATOR"} and hits:
             generated_answer = await generate_grounded_answer(
                 payload.query,
                 [
@@ -307,10 +307,10 @@ async def query_semantic_exclusive(
     Dedicated semantic-only vector retrieval endpoint.
     Strictly restricted to PREMIUM subscribers. Rejects FREE users with 403 Forbidden.
     """
-    if current_user.plan_type not in {"PREMIUM", "CREATOR"}:
+    if current_user.plan_type not in {"VAULT_AI", "PREMIUM", "CREATOR"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Semantic vector search requires an active PREMIUM or CREATOR subscription."
+            detail="Semantic vector search requires the Vault + AI plan."
         )
     payload.mode = "semantic"
     return await query_vault_documents(payload, current_user, db)

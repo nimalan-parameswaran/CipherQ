@@ -202,9 +202,12 @@ class EntitlementService:
         """
         Returns maximum allowed storage in decimal bytes.
         - FREE: 1 GB (1,000,000,000 bytes)
-        - PREMIUM: 5 GB (5,000,000,000 bytes)
-        - CREATOR: 25 GB (25,000,000,000 bytes)
+        - PRIVATE_VAULT: 5 GB (5,000,000,000 bytes)
+        - VAULT_AI: 5 GB (5,000,000,000 bytes)
+        - PREMIUM/CREATOR: legacy compatibility tiers
         """
+        if plan_type.upper() in {"PRIVATE_VAULT", "VAULT_AI"}:
+            return settings.PRIVATE_VAULT_QUOTA_BYTES
         if plan_type.upper() == "CREATOR":
             return settings.CREATOR_QUOTA_BYTES
         if plan_type.upper() == "PREMIUM":
@@ -216,22 +219,22 @@ class EntitlementService:
 
     def get_user_entitlements(self, user: User) -> Dict[str, Any]:
         """Returns structured entitlement dictionary for the user."""
-        has_ai = user.plan_type.upper() in {"PREMIUM", "CREATOR"}
+        has_ai = user.plan_type.upper() in {"VAULT_AI", "PREMIUM", "CREATOR"}
         quota = self.get_user_quota(user)
         return {
             "plan_type": user.plan_type,
             "storage_quota_bytes": quota,
             "has_semantic_search": has_ai,
             "has_ai_citations": True,
-            "ai_daily_limit": 500 if user.plan_type.upper() == "CREATOR" else (100 if has_ai else 0),
+            "ai_daily_limit": 100 if has_ai else 0,
             "is_generative_llm_active": False  # Dual-tier rule: false unless validated & loaded
         }
 
     def validate_plan_access(self, user: User, feature: str) -> None:
         """Enforces tier-specific feature restrictions."""
-        if feature == "SEMANTIC_SEARCH" and user.plan_type.upper() not in {"PREMIUM", "CREATOR"}:
+        if feature == "SEMANTIC_SEARCH" and user.plan_type.upper() not in {"VAULT_AI", "PREMIUM", "CREATOR"}:
             raise PlanPermissionError(
-                "Semantic vector search and local embeddings require an active PREMIUM or CREATOR subscription."
+                "Semantic vector search and local embeddings require the Vault + AI plan."
             )
 
 

@@ -299,7 +299,7 @@ class SearchService:
         if first_page_hits and self._needs_author_answer(query):
             return first_page_hits
 
-        if plan_type not in {"PREMIUM", "CREATOR"}:
+        if plan_type not in {"VAULT_AI", "PREMIUM", "CREATOR"}:
             normal_hits = await self.search_fts5(
                 db, user_id, query, limit=limit
             )

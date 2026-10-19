@@ -34,7 +34,11 @@ def verify_admin_token(x_admin_token: Optional[str] = Header(None, alias="X-Admi
 class PlanChangeRequest(BaseModel):
     user_id: Optional[str] = Field(None, description="UUID of target user")
     email: Optional[str] = Field(None, description="Email address of target user")
-    new_plan: str = Field(..., pattern="^(FREE|PREMIUM|CREATOR)$", description="Target plan: FREE, PREMIUM, or CREATOR")
+    new_plan: str = Field(
+        ...,
+        pattern="^(FREE|PRIVATE_VAULT|VAULT_AI|PREMIUM|CREATOR)$",
+        description="Target plan: FREE, PRIVATE_VAULT, or VAULT_AI",
+    )
     reason: Optional[str] = Field(default="admin_modification", max_length=255)
 
 

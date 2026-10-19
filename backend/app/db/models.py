@@ -30,7 +30,7 @@ class User(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
-    plan_type = Column(String(20), nullable=False, default="FREE")  # "FREE", "PREMIUM", or "CREATOR"
+    plan_type = Column(String(20), nullable=False, default="FREE")
     is_active = Column(Integer, nullable=False, default=1)
     created_at = Column(DateTime, nullable=False, default=utc_now)
 

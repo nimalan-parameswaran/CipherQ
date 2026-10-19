@@ -42,6 +42,8 @@ class Settings(BaseSettings):
     FREE_QUOTA_BYTES: int = 1_000_000_000       # 1 GB
     PREMIUM_QUOTA_BYTES: int = 5_000_000_000    # 5 GB
     CREATOR_QUOTA_BYTES: int = 25_000_000_000   # 25 GB
+    PRIVATE_VAULT_QUOTA_BYTES: int = 5_000_000_000
+    VAULT_AI_QUOTA_BYTES: int = 5_000_000_000
 
     # Administrative Operations Token (Development / Local Administration)
     ADMIN_TOKEN: str = "cipherq-dev-admin-secret-2026"

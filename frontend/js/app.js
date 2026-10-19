@@ -105,8 +105,8 @@ function ensureAuthModal() {
               <label class="form-label" for="reg-plan">Plan</label>
               <select class="form-control" id="reg-plan">
                 <option value="FREE">Free · 1 GB</option>
-                <option value="PREMIUM">Premium · 5 GB + local AI</option>
-                <option value="CREATOR">Creator · 25 GB + 500 AI queries</option>
+                <option value="PRIVATE_VAULT">Private Vault · 5 GB</option>
+                <option value="VAULT_AI">Vault + AI · 5 GB + local AI</option>
               </select>
             </div>
             <button class="btn btn-primary" id="btn-submit-register" type="submit" style="width:100%;margin-top:8px">Create account</button>
@@ -857,9 +857,9 @@ async function initAccount(user) {
     if (freeAction) {
       freeAction.innerHTML = '<button class="btn btn-outline" style="width:100%" disabled>Active plan</button>';
     }
-  } else if (user.plan_type === "PREMIUM" || user.plan_type === "CREATOR") {
-    const activeCardId = user.plan_type === "CREATOR" ? "card-plan-creator" : "card-plan-premium";
-    const activeActionId = user.plan_type === "CREATOR" ? "plan-action-creator" : "plan-action-premium";
+  } else if (user.plan_type !== "FREE") {
+    const activeCardId = user.plan_type === "PRIVATE_VAULT" ? "card-plan-private-vault" : "card-plan-vault-ai";
+    const activeActionId = user.plan_type === "PRIVATE_VAULT" ? "plan-action-private-vault" : "plan-action-vault-ai";
     const activeCard = document.getElementById(activeCardId);
     if (activeCard) {
       activeCard.classList.add("active-plan");
@@ -875,8 +875,8 @@ async function initAccount(user) {
   const button = document.getElementById("btn-toggle-plan");
   if (!button) return;
 
-  const target = user.plan_type === "FREE" ? "PREMIUM" : "FREE";
-  button.textContent = target === "PREMIUM" ? "Upgrade to Premium" : "Downgrade to Free";
+  const target = user.plan_type === "FREE" ? "VAULT_AI" : "FREE";
+  button.textContent = target === "VAULT_AI" ? "Upgrade to Vault + AI" : "Downgrade to Free";
 
   button.addEventListener("click", async () => {
     const token = window.prompt(`Enter administrative token to change ${user.email} to ${target}:`);
