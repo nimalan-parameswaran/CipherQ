@@ -28,12 +28,31 @@ jobs:
         uses: actions/configure-pages@v6
 
       - name: Stage frontend-only site
+        env:
+          CIPHERQ_API_BASE_URL: ${{ vars.CIPHERQ_API_BASE_URL }}
         run: |
           rm -rf _site
           mkdir -p _site
           cp -R frontend/. _site/
           find _site -type f \( -name '*.bak' -o -name '*.pre-public.bak' -o -name '*.pre-*.bak' \) -delete
           rm -f _site/js/mock-data.js
+          python3 - <<'PYCONFIG'
+          from pathlib import Path
+          import json, os, re
+          value = os.environ.get("CIPHERQ_API_BASE_URL", "").strip().rstrip("/")
+          if value and not value.startswith("https://"):
+              raise SystemExit("CIPHERQ_API_BASE_URL must use HTTPS")
+          path = Path("_site/js/config.js")
+          source = path.read_text()
+          source, count = re.subn(
+              r'''(?m)^window\.CIPHERQ_API_BASE_URL\s*=\s*["'][^"']*["'];''',
+              "window.CIPHERQ_API_BASE_URL = " + json.dumps(value) + ";",
+              source, count=1,
+          )
+          if count != 1:
+              raise SystemExit("Could not safely update API URL")
+          path.write_text(source)
+          PYCONFIG
           find _site -type f \( -name '.env' -o -name '.env.*' -o -name '*.db' -o -name '*.sqlite' -o -name '*.sqlite3' -o -name '*.pem' -o -name '*.key' -o -name '*.log' \) -delete
 
 
