@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Dashboard — CipherQ</title>
+  <script>
+    (function() {
+      var t = localStorage.getItem('cipherq-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="workspace-body">

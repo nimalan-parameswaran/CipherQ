@@ -4,6 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Assistant — CipherQ</title>
+  <script>
+    (function() {
+      var t = localStorage.getItem('cipherq-theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', t);
+    })();
+  </script>
   <link rel="stylesheet" href="css/styles.css">
   <!-- Marked.js for Markdown Rendering -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
@@ -45,7 +51,14 @@
           </span>
           <span class="brand-name">CipherQ</span>
         </a>
-        <span class="brand-tag">PRIVATE</span>
+        <div style="display:flex; align-items:center; gap:8px">
+          <button id="theme-toggle" class="btn btn-outline btn-sm" aria-label="Toggle theme" title="Toggle theme" style="width:32px; height:32px; padding:0; border-radius:50%">
+            <svg class="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+            </svg>
+          </button>
+          <span class="brand-tag">PRIVATE</span>
+        </div>
       </div>
 
       <div class="sidebar-section-title">Navigation</div>
