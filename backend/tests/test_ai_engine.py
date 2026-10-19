@@ -20,6 +20,32 @@ from backend.app.db.models import User, FileRecord, FileChunk, ChunkEmbedding
 
 
 @pytest.mark.asyncio
+async def test_greeting_uses_conversation_path_without_retrieval(client: AsyncClient):
+    """Greetings should be answered naturally without fabricated document evidence."""
+    await client.post("/api/v1/auth/register", json={
+        "email": "greeting_user@example.com",
+        "password": "Password2026!",
+        "plan_type": "FREE"
+    })
+    login_res = await client.post("/api/v1/auth/login", json={
+        "email": "greeting_user@example.com",
+        "password": "Password2026!"
+    })
+    before = await client.get("/api/v1/auth/usage")
+    greeting = await client.post("/api/v1/ai/query", json={"query": "hi"})
+    after = await client.get("/api/v1/auth/usage")
+
+    assert greeting.status_code == 200
+    data = greeting.json()
+    assert data["response_kind"] == "CONVERSATION"
+    assert data["mode_used"] == "CONVERSATION"
+    assert data["has_sufficient_evidence"] is True
+    assert data["citations"] == []
+    assert "Hi" in data["answer"]
+    assert after.json()["ai_queries_today"] == before.json()["ai_queries_today"]
+
+
+@pytest.mark.asyncio
 async def test_on_demand_indexing_lifecycle(client: AsyncClient, test_db_session: AsyncSession):
     """Verify documents are not automatically indexed upon upload, and indexing is strictly on-demand."""
     # 1. Register and login
@@ -386,4 +412,3 @@ async def test_pdf_extraction_page_level_citations(client: AsyncClient):
     assert citation1["filename"] == "kernel_specs.pdf"
     assert citation1["page_number"] == 1
     assert "boot sequence" in citation1["snippet"].lower()
-
