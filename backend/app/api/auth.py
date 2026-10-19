@@ -40,6 +40,27 @@ def get_client_ip(request: Request) -> str:
     return "127.0.0.1"
 
 
+def get_session_cookie_options(request: Request) -> tuple[str, bool]:
+    """
+    Return cookie attributes appropriate for the current browser request.
+
+    Local same-origin development keeps the configured Lax/non-secure defaults.
+    When the approved frontend is hosted on another origin, browsers require a
+    Secure, SameSite=None cookie before they will send the session back to the
+    API.
+    """
+    same_site = settings.COOKIE_SAMESITE
+    secure = settings.COOKIE_SECURE
+    origin = request.headers.get("origin", "").rstrip("/")
+    request_origin = str(request.base_url).rstrip("/")
+
+    if origin and origin != request_origin:
+        same_site = "none"
+        secure = True
+
+    return same_site, secure
+
+
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register_user(
     payload: UserRegisterRequest,
@@ -148,14 +169,16 @@ async def login_user(
     db.add(session_record)
     await db.commit()
 
+    cookie_samesite, cookie_secure = get_session_cookie_options(request)
+
     # Set secure HttpOnly cookie
     response.set_cookie(
         key=settings.SESSION_COOKIE_NAME,
         value=raw_session_token,
         max_age=settings.SESSION_EXPIRE_HOURS * 3600,
         httponly=True,
-        samesite=settings.COOKIE_SAMESITE,
-        secure=settings.COOKIE_SECURE,
+        samesite=cookie_samesite,
+        secure=cookie_secure,
         path="/"
     )
 

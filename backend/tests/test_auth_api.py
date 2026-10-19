@@ -129,6 +129,25 @@ async def test_login_and_cookie_issuance(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_cross_origin_login_issues_browser_compatible_cookie(client: AsyncClient):
+    """Verify approved cross-origin login uses Secure SameSite=None cookies."""
+    email = "cross_origin_login@example.com"
+    pwd = "CrossOriginPassword123!"
+    await client.post("/api/v1/auth/register", json={"email": email, "password": pwd})
+
+    login_res = await client.post(
+        "/api/v1/auth/login",
+        json={"email": email, "password": pwd},
+        headers={"Origin": "https://nimalan-parameswaran.github.io"},
+    )
+
+    assert login_res.status_code == 200
+    cookie_header = login_res.headers["set-cookie"].lower()
+    assert "samesite=none" in cookie_header
+    assert "secure" in cookie_header
+
+
+@pytest.mark.asyncio
 async def test_login_wrong_password_rejected(client: AsyncClient):
     """Verify incorrect password returns 401 Unauthorized."""
     email = "wrong_pwd_test@example.com"
