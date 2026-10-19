@@ -45,7 +45,9 @@ Alternatively, configure a repository **variable** named
 `CIPHERQ_API_BASE_URL` under **Settings → Secrets and variables → Actions →
 Variables**. The Pages workflow injects that public value into the staged
 `config.js` during deployment. Do not use a secret for this value, and do not
-set it until the approved public API endpoint exists.
+set it until the approved public API endpoint exists. If the variable is
+unset, the checked-in empty configuration is preserved and the deployed site
+fails closed with a backend-configuration message.
 
 The client appends `/api/v1` and preserves the existing request paths, request
 bodies, HttpOnly-cookie session design, CSRF header handling, and
@@ -84,29 +86,22 @@ outside the local network, the website is only a deployed static frontend.
 Login, registration, vault operations, indexing, AI queries, account data, and
 plan operations remain unavailable remotely.
 
-## CORS and cookie change requiring approval
+## CORS and cookie deployment requirements
 
-Inspection found no CORS middleware in the current backend. Do not apply this
-change automatically. The minimal proposed backend change is:
+The backend now includes explicit credentialed CORS for the GitHub Pages
+origin. The backend deployment must still set the cookie options for the
+cross-origin HTTPS architecture:
 
 ```python
-from fastapi.middleware.cors import CORSMiddleware
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["https://nimalan-parameswaran.github.io"],
-    allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
-    allow_headers=["Content-Type", "X-CSRF-Token", "X-Admin-Token"],
-    expose_headers=["Content-Disposition"],
-)
+COOKIE_SECURE=True
+COOKIE_SAMESITE=none
 ```
 
-CORS compares origins, not the `/CipherQ/` path. The backend must also use
-`COOKIE_SECURE=True` and a cross-site-compatible cookie policy such as
-`COOKIE_SAMESITE=none` when the browser and API are on different sites. These
-backend changes require a separate approval and controlled deployment on the
-Arduino; they are not part of this frontend change.
+CORS compares origins, not the `/CipherQ/` path. These environment changes
+require separate approval and controlled deployment on the Arduino; this task
+does not deploy or apply them. A backend configured with `COOKIE_SAMESITE=lax`
+and `COOKIE_SECURE=false` will still reject the remote browser session even
+when CORS is correct.
 
 ## Production security checklist
 

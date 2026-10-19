@@ -30,6 +30,7 @@
  *   Both are handled automatically when CIPHERQ_API_BASE_URL is non-empty.
  */
 
-// Set this to the approved public HTTPS API origin before a production deploy.
-// Leave empty for local development (same-origin /api/v1).
-window.CIPHERQ_API_BASE_URL = "https://disclaimers-targets-studied-scheduled.trycloudflare.com";
+// Set this to the currently approved public HTTPS API origin before a
+// production deploy. Leave empty for local development (same-origin /api/v1).
+// Never commit a temporary tunnel URL or a private network address here.
+window.CIPHERQ_API_BASE_URL = "";

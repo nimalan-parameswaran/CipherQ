@@ -6,6 +6,7 @@ Enforces Master Key startup self-test during application lifespan.
 from contextlib import asynccontextmanager
 from pathlib import Path
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
 from sqlalchemy import text
@@ -72,6 +73,23 @@ app = FastAPI(
     version=settings.VERSION,
     description="Your Private Cloud. Your Personal AI.",
     lifespan=lifespan
+)
+
+# Credentialed browser requests require an explicit origin. Keep this
+# configurable so deployments can add an approved frontend without allowing
+# arbitrary origins or wildcard credentials.
+allowed_origins = [
+    origin.strip()
+    for origin in settings.CORS_ALLOWED_ORIGINS.split(",")
+    if origin.strip()
+]
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=allowed_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
+    allow_headers=["Content-Type", "X-CSRF-Token", "X-Admin-Token"],
+    expose_headers=["Content-Disposition"],
 )
 
 # Register API v1 Routers

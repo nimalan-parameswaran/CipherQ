@@ -14,6 +14,39 @@ from backend.app.core.config import settings
 
 
 @pytest.mark.asyncio
+async def test_credentialed_cors_allows_approved_pages_origin(client: AsyncClient):
+    """Verify the deployed frontend origin can make credentialed API requests."""
+    response = await client.options(
+        "/api/v1/auth/me",
+        headers={
+            "Origin": "https://nimalan-parameswaran.github.io",
+            "Access-Control-Request-Method": "GET",
+            "Access-Control-Request-Headers": "X-CSRF-Token",
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.headers["access-control-allow-origin"] == (
+        "https://nimalan-parameswaran.github.io"
+    )
+    assert response.headers["access-control-allow-credentials"] == "true"
+
+
+@pytest.mark.asyncio
+async def test_credentialed_cors_rejects_unapproved_origin(client: AsyncClient):
+    """Verify arbitrary origins cannot use the credentialed API."""
+    response = await client.options(
+        "/api/v1/auth/me",
+        headers={
+            "Origin": "https://attacker.example",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+
+    assert "access-control-allow-origin" not in response.headers
+
+
+@pytest.mark.asyncio
 async def test_register_user_success(client: AsyncClient, test_db_session: AsyncSession):
     """Verify user registration succeeds, sets defaults, and does not leak password hash."""
     payload = {

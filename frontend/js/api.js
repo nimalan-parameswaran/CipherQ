@@ -158,7 +158,7 @@ class CipherQAPIClient {
         return null;
       }
       if (!res.ok) {
-        return null;
+        throw new Error(`The CipherQ backend returned HTTP ${res.status}.`);
       }
       const data = await res.json();
       if (data && data.csrf_token) {

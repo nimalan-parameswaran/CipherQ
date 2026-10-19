@@ -30,6 +30,7 @@ class Settings(BaseSettings):
     SESSION_COOKIE_NAME: str = "cipherq_session"
     COOKIE_SECURE: bool = False  # Set to True when TLS/HTTPS is active
     COOKIE_SAMESITE: str = "lax"
+    CORS_ALLOWED_ORIGINS: str = "https://nimalan-parameswaran.github.io"
     
     # Rate Limiting (per IP address)
     AUTH_RATE_LIMIT_LOGIN_MAX: int = 5
