@@ -1,0 +1,1011 @@
+/* ==========================================================================
+   CipherQ — Contrast & Visibility Overrides
+   Theme-aware overrides ensuring WCAG AA compliance (4.5:1 normal, 3:1 large text)
+   in both Light mode and Dark mode across all pages and components.
+   ========================================================================== */
+
+/* ── 1. Global base defaults ─────────────────────────────────────────────── */
+body {
+  color: var(--text-primary);
+  background-color: var(--bg-primary);
+}
+
+h1, h2, h3, h4, h5, h6 {
+  color: var(--text-primary);
+}
+
+p {
+  color: var(--text-muted);
+}
+
+/* ── 2. Navigation bar ───────────────────────────────────────────────────── */
+.site-header {
+  background: rgba(247, 247, 242, 0.94);
+  border-bottom-color: var(--border-color);
+}
+
+[data-theme="dark"] .site-header {
+  background: rgba(14, 21, 17, 0.92);
+  border-bottom-color: var(--border-color);
+}
+
+.brand-name {
+  color: var(--text-primary);
+  font-weight: 800;
+}
+
+/* Nav links */
+.site-links a {
+  color: var(--nav-link, #34463D);
+  font-weight: 600;
+}
+
+[data-theme="dark"] .site-links a {
+  color: var(--text-secondary);
+}
+
+.site-links a:hover {
+  color: var(--text-primary);
+}
+
+.site-links a::after {
+  background: var(--accent-color);
+}
+
+/* ── 3. Hero section ─────────────────────────────────────────────────────── */
+.eyebrow {
+  color: var(--accent-color);
+  font-weight: 800;
+}
+
+.hero h1 {
+  background: none;
+  -webkit-background-clip: unset;
+  background-clip: unset;
+  color: var(--text-primary);
+}
+
+[data-theme="dark"] .hero h1 {
+  background: linear-gradient(135deg, #EEF2EE 35%, #22D49A);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+.hero-subheading {
+  color: var(--text-secondary);
+}
+
+.hero-copy {
+  color: var(--text-muted);
+}
+
+.hero-note {
+  color: var(--text-dim);
+}
+
+/* ── 4. Section headings ─────────────────────────────────────────────────── */
+.section-heading h2 {
+  color: var(--text-primary);
+}
+
+.section-heading p {
+  color: var(--text-muted);
+}
+
+/* ── 5. Feature cards (benefit cards) ───────────────────────────────────── */
+.card {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+.card h3 {
+  color: var(--text-primary);
+}
+
+.card p,
+.card .muted,
+.muted {
+  color: var(--text-muted);
+}
+
+/* Feature number badges */
+.feature-number {
+  color: var(--accent-deep);
+  background: linear-gradient(145deg, #C8E9D9, #A8D9C0);
+  border-color: rgba(10, 102, 72, 0.25);
+}
+
+[data-theme="dark"] .feature-number {
+  color: #3ED4A0;
+  background: rgba(34, 212, 154, 0.15);
+  border-color: rgba(34, 212, 154, 0.3);
+}
+
+/* ── 6. Workflow steps ───────────────────────────────────────────────────── */
+.workflow-step {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+.workflow-step h3 {
+  color: var(--text-primary);
+}
+
+.workflow-step p {
+  color: var(--text-muted);
+}
+
+.workflow-step-number {
+  background: #10231B;
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .workflow-step-number {
+  background: #3ED4A0;
+  color: #0A100C;
+}
+
+.workflow-tag {
+  color: var(--accent-deep);
+}
+
+[data-theme="dark"] .workflow-tag {
+  color: var(--accent-color);
+}
+
+/* ── 7. Architecture strip ───────────────────────────────────────────────── */
+.architecture-strip h3 {
+  color: #FFFFFF;
+}
+
+.architecture-points strong {
+  color: #A0D8C0;
+}
+
+/* ── 8. Buttons ──────────────────────────────────────────────────────────── */
+.btn-primary {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #10231B 0%, #0A6648 100%);
+  border-color: #064030;
+  box-shadow: 0 6px 16px rgba(16, 35, 27, 0.25), inset 0 1px 0 rgba(255,255,255,0.12);
+}
+
+[data-theme="dark"] .btn-primary {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #15966E 0%, #064030 100%);
+  border-color: #24382B;
+}
+
+.btn-primary:hover {
+  color: #FFFFFF !important;
+  background: linear-gradient(145deg, #1A3828 0%, #0D7A56 100%);
+}
+
+[data-theme="dark"] .btn-primary:hover {
+  background: linear-gradient(145deg, #1EAE80 0%, #08553F 100%);
+}
+
+.btn-outline {
+  color: var(--text-primary);
+  background: var(--bg-surface-raised, rgba(247, 247, 242, 0.8));
+  border-color: var(--border-color);
+}
+
+[data-theme="dark"] .btn-outline {
+  color: var(--text-primary);
+  background: rgba(23, 35, 27, 0.7);
+  border-color: var(--border-color);
+}
+
+.btn-outline:hover {
+  color: var(--accent-color);
+  border-color: var(--border-color-hover);
+  background: var(--accent-light);
+}
+
+.btn-dark {
+  color: #FFFFFF;
+  background: linear-gradient(145deg, #1E3028, #10231B);
+  border-color: #10231B;
+}
+
+[data-theme="dark"] .btn-dark {
+  color: #0A100C;
+  background: linear-gradient(145deg, #3ED4A0, #22B580);
+  border-color: #3ED4A0;
+  font-weight: 750;
+}
+
+.btn-dark:hover {
+  color: #FFFFFF;
+  background: linear-gradient(145deg, #2A4038, #1E3028);
+}
+
+[data-theme="dark"] .btn-dark:hover {
+  color: #0A100C;
+  background: linear-gradient(145deg, #4EE2AD, #28C88F);
+}
+
+/* ── 9. Badges ───────────────────────────────────────────────────────────── */
+.badge {
+  color: #064030;
+  background: #C8E9D9;
+  border: 1px solid rgba(6, 64, 48, 0.2);
+}
+
+.badge-free {
+  color: #2E3D36;
+  background: #DFE5DF;
+}
+
+.badge-premium {
+  color: #064030;
+  background: linear-gradient(135deg, #C8E9D9, #A8D9C0);
+  border-color: rgba(10, 102, 72, 0.25);
+}
+
+.badge-warning {
+  color: #4A2E06;
+  background: #F0E0B8;
+  border-color: rgba(122, 85, 32, 0.3);
+}
+
+.badge-danger {
+  color: #5C1812;
+  background: #F5D0CC;
+  border-color: rgba(139, 34, 24, 0.3);
+}
+
+/* ── 10. Pricing cards ───────────────────────────────────────────────────── */
+.price-card .price {
+  color: var(--text-primary);
+}
+
+.price-period {
+  color: var(--text-muted);
+}
+
+.price-card ul {
+  color: var(--text-muted);
+}
+
+.price-card-muted {
+  background: var(--bg-secondary);
+}
+
+[data-theme="dark"] .price-card-muted {
+  background: linear-gradient(145deg, rgba(28, 37, 32, .95), rgba(22, 29, 25, .9));
+}
+
+.price-card.featured::before {
+  color: #3A2208;
+  background: #F0E0B8;
+  border-color: rgba(122, 85, 32, 0.35);
+}
+
+[data-theme="dark"] .price-card.featured::before {
+  color: #FCEFD2;
+  background: #5E4012;
+  border-color: rgba(229, 178, 93, 0.35);
+}
+
+/* ── 11. Comparison table ────────────────────────────────────────────────── */
+.comparison-wrap {
+  background: var(--bg-card);
+  border-color: var(--border-color);
+}
+
+.comparison-heading h3 {
+  color: var(--text-primary);
+}
+
+.comparison-heading > .muted {
+  color: var(--text-muted);
+}
+
+.comparison-table thead th {
+  color: var(--text-dim);
+}
+
+.comparison-table tbody th {
+  color: var(--text-primary);
+}
+
+.comparison-table tbody td {
+  color: var(--text-muted);
+}
+
+/* ── 12. Security panel ──────────────────────────────────────────────────── */
+.security-panel {
+  color: var(--text-primary);
+  background-color: var(--bg-card);
+}
+
+.security-panel h2 {
+  color: var(--text-primary);
+}
+
+.security-panel p,
+.security-panel .muted {
+  color: var(--text-muted);
+}
+
+.security-panel a {
+  color: var(--accent-deep);
+}
+
+[data-theme="dark"] .security-panel {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .security-panel h2 {
+  color: #FFFFFF;
+}
+
+[data-theme="dark"] .security-panel p,
+[data-theme="dark"] .security-panel .muted {
+  color: #C8D8CE;
+}
+
+[data-theme="dark"] .security-panel a {
+  color: #7AE0B8;
+}
+
+/* ── 13. CTA section ─────────────────────────────────────────────────────── */
+.cta h2 {
+  color: #FFFFFF;
+}
+
+.cta p {
+  color: #C8D8CE;
+}
+
+/* ── 14. Footer ──────────────────────────────────────────────────────────── */
+.footer {
+  border-top-color: var(--border-color);
+  color: var(--text-muted);
+}
+
+.footer strong {
+  color: var(--text-primary);
+}
+
+.footer span {
+  color: var(--text-muted);
+}
+
+.footer-links a {
+  color: var(--nav-link);
+}
+
+.footer-links a:hover {
+  color: var(--text-primary);
+}
+
+/* ── 15. Dark-mode marketing pages ──────────────────────────────────────── */
+[data-theme="dark"] {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] h1,
+[data-theme="dark"] h2,
+[data-theme="dark"] h3 {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] p,
+[data-theme="dark"] .muted {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .hero h1 {
+  background: linear-gradient(135deg, #EEF2EE 35%, #22D49A);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+[data-theme="dark"] .hero-subheading {
+  color: #A0D4B8;
+}
+
+[data-theme="dark"] .site-links a {
+  color: #C4D4CA;
+}
+
+[data-theme="dark"] .site-links a:hover {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .card {
+  background: linear-gradient(145deg, #1D2620, #181F1B);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .card h3 {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .card p,
+[data-theme="dark"] .card .muted {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .workflow-step {
+  background: linear-gradient(145deg, rgba(29, 38, 32, .98), rgba(24, 31, 27, .94));
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="dark"] .workflow-step h3 {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .workflow-step p {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .eyebrow {
+  color: #22D49A;
+}
+
+[data-theme="dark"] .section-heading h2 {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .section-heading p {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .btn-outline {
+  color: #D4E0D6;
+  background: rgba(29, 38, 32, 0.7);
+  border-color: rgba(255, 255, 255, 0.18);
+}
+
+[data-theme="dark"] .btn-outline:hover {
+  color: #EEF2EE;
+  border-color: #22D49A;
+}
+
+[data-theme="dark"] .price-card .price {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .price-period {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .price-card ul {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .price-card-muted {
+  background: linear-gradient(145deg, rgba(28, 37, 32, .95), rgba(22, 29, 25, .9));
+}
+
+[data-theme="dark"] .comparison-wrap {
+  background: rgba(21, 28, 23, 0.9);
+  border-color: rgba(255, 255, 255, 0.10);
+}
+
+[data-theme="dark"] .comparison-heading h3 {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .comparison-heading > .muted {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .comparison-table thead th {
+  color: #8FA89A;
+}
+
+[data-theme="dark"] .comparison-table tbody th {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .comparison-table tbody td {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .footer {
+  color: #B4C0B8;
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .footer strong {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .footer span {
+  color: #B4C0B8;
+}
+
+[data-theme="dark"] .footer-links a {
+  color: #C4D4CA;
+}
+
+[data-theme="dark"] .footer-links a:hover {
+  color: #EEF2EE;
+}
+
+/* ── 16. Workspace sidebar ───────────────────────────────────────────────── */
+.workspace-sidebar {
+  background: var(--cq-sidebar);
+}
+
+.workspace-sidebar .brand-name {
+  color: var(--cq-text);
+}
+
+.sidebar-section-title {
+  color: var(--cq-text-dim);
+}
+
+.workspace-nav a,
+.workspace-nav .nav-item {
+  color: var(--cq-text-muted);
+}
+
+.workspace-nav a:hover,
+.workspace-nav .nav-item:hover {
+  color: var(--cq-text);
+}
+
+.workspace-nav a.active,
+.workspace-nav .nav-item.active {
+  color: var(--cq-text);
+}
+
+.system-status-indicator {
+  color: var(--cq-text-muted);
+}
+
+.system-crypto-tag {
+  color: var(--cq-text-dim);
+}
+
+.workspace-sidebar .nav-user {
+  color: var(--cq-text);
+}
+
+/* ── 17. Workspace main area ─────────────────────────────────────────────── */
+.workspace-top h1 {
+  color: var(--cq-text);
+}
+
+.workspace-top p {
+  color: var(--cq-text-muted);
+}
+
+.workspace-top .eyebrow {
+  color: var(--cq-emerald);
+}
+
+/* Metric cards */
+.workspace-body .metric-label {
+  color: var(--cq-text-dim);
+}
+
+.workspace-body .metric-value {
+  color: var(--cq-text);
+}
+
+.workspace-body .metric-meta {
+  color: var(--cq-text-dim);
+}
+
+/* Section headings */
+.workspace-section-heading h2 {
+  color: var(--cq-text);
+}
+
+.workspace-section-heading .muted {
+  color: var(--cq-text-muted);
+}
+
+/* Tables */
+.workspace-body th {
+  color: var(--cq-text-dim);
+}
+
+.workspace-body td {
+  color: var(--cq-text);
+}
+
+.workspace-body .file-name {
+  color: var(--cq-text);
+}
+
+.workspace-body .file-meta {
+  color: var(--cq-text-dim);
+}
+
+/* Dropzone */
+.workspace-body .dropzone strong {
+  color: var(--cq-text);
+}
+
+.workspace-body .dropzone span {
+  color: var(--cq-text-muted);
+}
+
+/* Chat */
+.workspace-body .message.assistant {
+  color: var(--cq-text);
+}
+
+.workspace-body .message.user {
+  color: var(--cq-text);
+}
+
+/* Form controls */
+.vault-search-input {
+  color: var(--cq-text);
+}
+
+.vault-search-input::placeholder {
+  color: var(--cq-text-dim);
+}
+
+/* Filter pills */
+.filter-pill {
+  color: var(--cq-text-muted);
+}
+
+.filter-pill:hover {
+  color: var(--cq-text);
+}
+
+.filter-pill.active {
+  color: var(--cq-emerald);
+}
+
+/* ── 18. Workspace light theme explicit overrides ────────────────────────── */
+html[data-theme="light"] body.workspace-body .workspace-top h1 {
+  color: #0D1A10;
+}
+
+html[data-theme="light"] body.workspace-body .workspace-top p {
+  color: #2E4438;
+}
+
+html[data-theme="light"] body.workspace-body .workspace-top .eyebrow {
+  color: #0A6648;
+}
+
+html[data-theme="light"] body.workspace-body .workspace-nav a,
+html[data-theme="light"] body.workspace-body .workspace-nav .nav-item {
+  color: #2E4438;
+}
+
+html[data-theme="light"] body.workspace-body .workspace-nav a:hover,
+html[data-theme="light"] body.workspace-body .workspace-nav .nav-item:hover {
+  color: #0D1A10;
+}
+
+html[data-theme="light"] body.workspace-body .workspace-nav a.active,
+html[data-theme="light"] body.workspace-body .workspace-nav .nav-item.active {
+  color: #064030;
+}
+
+html[data-theme="light"] body.workspace-body .metric-label {
+  color: #4E6459;
+}
+
+html[data-theme="light"] body.workspace-body .metric-value {
+  color: #0D1A10;
+}
+
+html[data-theme="light"] body.workspace-body .metric-meta {
+  color: #4E6459;
+}
+
+html[data-theme="light"] body.workspace-body .workspace-section-heading h2 {
+  color: #0D1A10;
+}
+
+html[data-theme="light"] body.workspace-body .workspace-section-heading .muted {
+  color: #2E4438;
+}
+
+html[data-theme="light"] body.workspace-body th {
+  color: #4E6459;
+}
+
+html[data-theme="light"] body.workspace-body td {
+  color: #1E3028;
+}
+
+html[data-theme="light"] body.workspace-body .file-name {
+  color: #0D1A10;
+}
+
+html[data-theme="light"] body.workspace-body .file-meta {
+  color: #4E6459;
+}
+
+html[data-theme="light"] body.workspace-body .sidebar-section-title {
+  color: #4E6459;
+}
+
+html[data-theme="light"] body.workspace-body .system-status-indicator {
+  color: #1E3028;
+}
+
+html[data-theme="light"] body.workspace-body .system-crypto-tag {
+  color: #4E6459;
+}
+
+html[data-theme="light"] body.workspace-body .workspace-sidebar .nav-user {
+  color: #0D1A10;
+}
+
+html[data-theme="light"] body.workspace-body .dropzone strong {
+  color: #0D1A10;
+}
+
+html[data-theme="light"] body.workspace-body .dropzone span {
+  color: #2E4438;
+}
+
+html[data-theme="light"] body.workspace-body .vault-search-input {
+  color: #0D1A10;
+}
+
+html[data-theme="light"] body.workspace-body .vault-search-input::placeholder {
+  color: #4E6459;
+}
+
+html[data-theme="light"] body.workspace-body .filter-pill {
+  color: #2E4438;
+}
+
+html[data-theme="light"] body.workspace-body .filter-pill.active {
+  color: #064030;
+}
+
+html[data-theme="light"] body.workspace-body .message.assistant {
+  color: #1E3028;
+}
+
+html[data-theme="light"] body.workspace-body .message.user {
+  color: #0D1A10;
+}
+
+/* ── 19. Auth modal ──────────────────────────────────────────────────────── */
+.modal-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.35);
+}
+
+.modal-kicker {
+  color: var(--accent-color);
+}
+
+.modal-title {
+  color: var(--text-primary);
+}
+
+.modal-intro {
+  color: var(--text-muted);
+}
+
+.form-label {
+  color: var(--text-secondary);
+}
+
+.form-hint {
+  color: var(--text-dim);
+}
+
+.form-control,
+.modal-body .form-control {
+  background: var(--input-bg);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+.form-control::placeholder,
+.modal-body .form-control::placeholder {
+  color: var(--text-dim);
+}
+
+.modal-tabs {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+.modal-tab-btn {
+  color: var(--text-muted);
+}
+
+.modal-tab-btn.active {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+[data-theme="dark"] .modal-card {
+  background: #131C16;
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+[data-theme="dark"] .modal-title {
+  color: #EEF2EE;
+}
+
+[data-theme="dark"] .modal-intro {
+  color: #C0CCBF;
+}
+
+[data-theme="dark"] .form-label {
+  color: #D0DCD4;
+}
+
+[data-theme="dark"] .form-hint {
+  color: #8FA89A;
+}
+
+[data-theme="dark"] .form-control,
+[data-theme="dark"] .modal-body .form-control {
+  background: #0E1612;
+  color: #EEF2EE;
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+[data-theme="dark"] .form-control::placeholder,
+[data-theme="dark"] .modal-body .form-control::placeholder {
+  color: #6A8070;
+}
+
+[data-theme="dark"] .modal-tabs {
+  background: #0E1612;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme="dark"] .modal-tab-btn {
+  color: #8FA89A;
+}
+
+[data-theme="dark"] .modal-tab-btn.active {
+  background: #18241D;
+  color: #EEF2EE;
+}
+
+/* ── 20. Preview window (hero mock) ──────────────────────────────────────── */
+.preview-main h3 {
+  color: var(--text-primary);
+}
+
+.preview-status {
+  color: var(--text-muted);
+}
+
+.preview-card small {
+  color: var(--text-dim);
+}
+
+.preview-card strong {
+  color: var(--text-primary);
+}
+
+.preview-card span {
+  color: var(--text-dim);
+}
+
+/* ── 21. Plan feature list (account/pricing pages) ───────────────────────── */
+.plan-feature-list li {
+  color: var(--cq-text-muted);
+}
+
+html[data-theme="light"] body.workspace-body .plan-feature-list li {
+  color: #2E4438;
+}
+
+.plan-tier-price {
+  color: var(--cq-text);
+}
+
+html[data-theme="light"] body.workspace-body .plan-tier-price {
+  color: #0D1A10;
+}
+
+/* ── 22. Bento grid cards ────────────────────────────────────────────────── */
+.benefit-card h3 {
+  color: var(--text-primary);
+}
+
+.benefit-card p {
+  color: var(--text-muted);
+}
+
+/* ── 23. Chat input hint ─────────────────────────────────────────────────── */
+.chat-input-hint {
+  color: var(--cq-text-dim);
+}
+
+html[data-theme="light"] body.workspace-body .chat-input-hint {
+  color: #4E6459;
+}
+
+/* ── 24. Empty state text ────────────────────────────────────────────────── */
+.chat-empty-title {
+  color: var(--cq-text);
+}
+
+html[data-theme="light"] body.workspace-body .chat-empty-title {
+  color: #0D1A10;
+}
+
+.chat-empty-copy {
+  color: var(--cq-text-muted);
+}
+
+html[data-theme="light"] body.workspace-body .chat-empty-copy {
+  color: #2E4438;
+}
+
+.prompt-chip {
+  color: var(--cq-text-muted);
+}
+
+html[data-theme="light"] body.workspace-body .prompt-chip {
+  color: #2E4438;
+}
+
+/* ── 25. Account page metric labels ──────────────────────────────────────── */
+.account-meta .nav-user {
+  color: var(--cq-text);
+}
+
+html[data-theme="light"] body.workspace-body .account-meta .nav-user {
+  color: #0D1A10;
+}
+
+/* ── 26. Mobile header (workspace) ───────────────────────────────────────── */
+.workspace-mobile-header .brand-name {
+  color: var(--cq-text);
+}
+
+html[data-theme="light"] body.workspace-body .workspace-mobile-header .brand-name {
+  color: #0D1A10;
+}
+
+/* ── 27. Brand tag ───────────────────────────────────────────────────────── */
+.brand-tag {
+  color: var(--accent-color);
+}
+
+html[data-theme="light"] body.workspace-body .brand-tag {
+  color: #064030;
+  background: rgba(10, 102, 72, 0.12);
+  border-color: rgba(10, 102, 72, 0.28);
+}
+
+/* ── 28. Btn logout ──────────────────────────────────────────────────────── */
+.btn-logout-action {
+  color: var(--cq-text-muted);
+}
+
+html[data-theme="light"] body.workspace-body .btn-logout-action {
+  color: #2E4438;
+}
+
+/* ── 29. Auth lock card (unauthenticated state) ──────────────────────────── */
+.auth-lock-card h2 {
+  color: var(--cq-text);
+}
+
+html[data-theme="light"] body.workspace-body .auth-lock-card h2 {
+  color: #0D1A10;
+}
+
+/* ── 30. Focus ring (accessibility) ─────────────────────────────────────── */
+:focus-visible {
+  outline: 3px solid var(--accent-color);
+  outline-offset: 3px;
+}

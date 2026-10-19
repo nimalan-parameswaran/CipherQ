@@ -3,9 +3,58 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="description" content="CipherQ is a private file vault with local document search and AI for resource-conscious hardware.">
+  <meta name="description" content="CipherQ is an open-source private cloud storage vault and local AI workspace designed for Arduino UNO Q and Debian Linux.">
   <title>CipherQ — Your files. Your cloud. Your AI.</title>
+  <script>
+    (function() {
+      var SUN_ICON = '<svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
+      var MOON_ICON = '<svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>';
+      function getTheme() {
+        try {
+          var stored = localStorage.getItem('cipherq-theme');
+          if (stored === 'dark' || stored === 'light') return stored;
+        } catch (e) {}
+        return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      function applyTheme(theme, persist) {
+        var selected = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', selected);
+        if (document.body) document.body.setAttribute('data-theme', selected);
+        if (persist) {
+          try { localStorage.setItem('cipherq-theme', selected); } catch (e) {}
+        }
+        var isDark = selected === 'dark';
+        var label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+        document.querySelectorAll('#theme-toggle').forEach(function(btn) {
+          btn.setAttribute('aria-label', label);
+          btn.setAttribute('title', label);
+          btn.innerHTML = isDark ? SUN_ICON : MOON_ICON;
+        });
+      }
+      window.__applyTheme = applyTheme;
+      applyTheme(getTheme(), false);
+      document.addEventListener('DOMContentLoaded', function() {
+        applyTheme(getTheme(), false);
+        document.querySelectorAll('#theme-toggle').forEach(function(btn) {
+          btn.onclick = function() {
+            var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            applyTheme(current === 'dark' ? 'light' : 'dark', true);
+          };
+        });
+      });
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+          try {
+            if (!localStorage.getItem('cipherq-theme')) {
+              applyTheme(e.matches ? 'dark' : 'light', false);
+            }
+          } catch (err) {}
+        });
+      }
+    })();
+  </script>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/contrast-overrides.css">
 </head>
 <body>
   <header class="site-header">
@@ -16,9 +65,13 @@
       </a>
       <button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button>
       <ul class="site-links" id="site-links">
-        <li><a href="#product">Product</a></li>
-        <li><a href="#security">Security</a></li>
+        <li><a href="#features">Features</a></li>
+        <li><a href="#workflow">How it works</a></li>
+        <li><a href="#audiences">Who it's for</a></li>
+        <li><a href="#local-ai">Why local AI</a></li>
         <li><a href="#pricing">Pricing</a></li>
+        <li><a href="#security">Security</a></li>
+        <li><a href="#faq">FAQ</a></li>
       </ul>
       <div class="nav-actions">
         <button id="theme-toggle" class="btn btn-outline btn-sm" aria-label="Toggle theme" title="Toggle theme">
@@ -27,23 +80,25 @@
           </svg>
         </button>
         <button id="btn-nav-login" class="btn btn-outline btn-sm">Log in</button>
-        <button id="btn-nav-register" class="btn btn-dark btn-sm">Get started</button>
+        <button id="btn-nav-register" class="btn btn-dark btn-sm">Get started free</button>
       </div>
     </nav>
   </header>
 
   <main>
+    <!-- Hero Section -->
     <section class="container hero">
       <div>
-        <div class="eyebrow">Private infrastructure, made simple</div>
+        <div class="eyebrow">Private cloud storage &amp; on-device AI</div>
         <h1>Your files.<br>Your cloud.<br>Your AI.</h1>
         <h2 class="hero-subheading">Private storage meets on-device intelligence.</h2>
-        <p class="hero-copy">Keep your documents in an encrypted vault. Find what matters, search your files, and ask questions using local AI on your own hardware.</p>
+        <p class="hero-copy">CipherQ gives you an authenticated, encrypted file vault and an on-device AI assistant. Keep your documents secure on hardware you own, discover information with keyword and semantic search, and get verifiable answers with page-level citations—with all processing kept strictly local.</p>
         <div class="hero-actions">
           <button id="hero-get-started" class="btn btn-primary">Get started free</button>
-          <a class="btn btn-outline" href="#pricing">Explore plans</a>
+          <a class="btn btn-outline" href="#features">Explore features</a>
+          <a class="btn btn-outline" href="#pricing">Compare plans</a>
         </div>
-        <p class="hero-note">Designed for private, resource-conscious computing on Arduino UNO Q.</p>
+        <p class="hero-note">Designed for resource-conscious computing on Arduino UNO Q and Debian Linux.</p>
       </div>
       <div class="preview-window" aria-label="Decorative CipherQ workspace preview">
         <div class="preview-top"><span class="preview-dot"></span><span class="preview-dot"></span><span class="preview-dot"></span><span>cipherq / private workspace</span></div>
@@ -57,194 +112,512 @@
           </aside>
           <div class="preview-main">
             <small class="muted">Workspace overview</small>
-            <h3>A quieter place for important work</h3>
+            <h3>Private workspace preview</h3>
             <div class="preview-status"><span class="preview-status-dot"></span> Local services ready</div>
             <div class="preview-grid">
               <div class="preview-card"><small>Storage</small><strong>Private vault</strong><span>Encrypted at rest</span></div>
-              <div class="preview-card"><small>Search</small><strong>Find faster</strong><span>Keyword + semantic</span></div>
-              <div class="preview-card preview-card-wide"><small>Local assistant</small><strong>Ask across your indexed documents</strong><span>Grounded answers from your authorized workspace</span></div>
+              <div class="preview-card"><small>Search</small><strong>Fast search</strong><span>Keyword &amp; semantic</span></div>
+              <div class="preview-card preview-card-wide"><small>Local assistant</small><strong>Ask questions about your files</strong><span>Grounded answers with page citations</span></div>
             </div>
           </div>
         </div>
       </div>
     </section>
 
-    <section class="container section" id="product">
+    <!-- Feature Cards Section -->
+    <section class="container section" id="features">
       <div class="section-heading">
-        <div class="eyebrow">A focused foundation for your files</div>
-        <h2 class="text-2xl">Everything you need. Nothing you don't.</h2>
-        <p class="text-base">One private workspace for storing, finding, and understanding your documents without sending them to third-party AI services.</p>
+        <div class="eyebrow">Core Capabilities</div>
+        <h2 class="text-2xl">Built for privacy and local intelligence.</h2>
+        <p class="text-base">Store, retrieve, and understand your documents on hardware you control.</p>
       </div>
       <div class="bento-grid">
         <article class="card benefit-card" data-area="large">
           <span class="feature-number">01</span>
-          <h3 class="text-lg">Private vault</h3>
-          <p class="text-sm">Encrypted storage, authenticated integrity verification, and controlled access through your account.</p>
+          <h3 class="text-lg">Encrypted file vault</h3>
+          <p class="feature-benefit">Authenticated file storage with verified integrity.</p>
+          <p class="text-sm">Files are protected at rest with unique individual keys under server master protection. Every upload records cryptographic checksums to verify integrity on download, with full support for uploading, downloading, and deleting files.</p>
         </article>
         <article class="card benefit-card" data-area="medium">
           <span class="feature-number">02</span>
-          <h3 class="text-lg">Local intelligence</h3>
-          <p class="text-sm">Document search and question answering through the existing local retrieval and AI pipeline.</p>
+          <h3 class="text-lg">Local AI assistant</h3>
+          <p class="feature-benefit">Ask questions across your documents with on-device processing.</p>
+          <p class="text-sm">The on-device assistant runs via an internal service using compact local language models. Document queries and text excerpts are processed locally on your server host for direct, confidential assistance.</p>
         </article>
         <article class="card benefit-card" data-area="medium">
           <span class="feature-number">03</span>
-          <h3 class="text-lg">Find it faster</h3>
-          <p class="text-sm">Keyword search for every plan, with semantic retrieval where your plan supports it.</p>
+          <h3 class="text-lg">Keyword &amp; semantic search</h3>
+          <p class="feature-benefit">Fast keyword indexing across all plans, with semantic vectors on AI Pro.</p>
+          <p class="text-sm">Locate exact terms with instant full-text search across all plans, or upgrade to AI Pro for local semantic vector search to find passages by concept and meaning on your own device.</p>
         </article>
         <article class="card benefit-card" data-area="small">
           <span class="feature-number">04</span>
-          <h3 class="text-lg">Built to be efficient</h3>
-          <p class="text-sm">Resource-conscious design for compact local computing on Arduino UNO Q and Debian Linux.</p>
+          <h3 class="text-lg">Resource-conscious computing</h3>
+          <p class="feature-benefit">Optimized for Arduino UNO Q and Debian Linux systems.</p>
+          <p class="text-sm">Engineered with streaming memory pipelines, responsive concurrency management, and host disk safety margins to operate reliably on compact edge hardware.</p>
+        </article>
+        <article class="card benefit-card" data-area="medium">
+          <span class="feature-number">05</span>
+          <h3 class="text-lg">Evidence-based citations</h3>
+          <p class="feature-benefit">Answers grounded directly in your files with source links.</p>
+          <p class="text-sm">The assistant answers strictly from retrieved passages in your vault, providing clear citations with document names and page references so you can verify every response.</p>
+        </article>
+        <article class="card benefit-card" data-area="medium">
+          <span class="feature-number">06</span>
+          <h3 class="text-lg">Open-source software</h3>
+          <p class="feature-benefit">Inspect every line of code, audit the security model, and self-host freely.</p>
+          <p class="text-sm">CipherQ is released under the permissive MIT license. Anyone can inspect the code, verify the security boundaries, and deploy on their own hardware.</p>
         </article>
       </div>
     </section>
 
+    <!-- Workflow Section: How CipherQ works -->
     <section class="container section workflow-section" id="workflow">
       <div class="section-heading">
-        <div class="eyebrow">From file to answer</div>
-        <h2>A private workflow you can understand.</h2>
-        <p>CipherQ keeps each step visible: protect the file, build a local index, then answer from the evidence you choose to retrieve.</p>
+        <div class="eyebrow">Architecture</div>
+        <h2>How CipherQ works</h2>
+        <p>A transparent on-device pipeline from document upload to evidence-backed answers.</p>
       </div>
       <div class="workflow-grid">
         <article class="workflow-step">
           <div class="workflow-step-number">01</div>
           <div>
-            <h3>Protect</h3>
-            <p>Files arrive through an authenticated API and are encrypted before they are committed to the local vault.</p>
-            <span class="workflow-tag">AES-GCM + integrity checks</span>
+            <h3>Step 1 — Encrypted ingestion</h3>
+            <p>Upload files securely through the authenticated API. Each file is assigned an individual key and encrypted before writing to storage, with integrity checksums recorded automatically.</p>
+            <span class="workflow-tag">Authenticated encryption · Per-file keys · Integrity verification</span>
           </div>
         </article>
         <article class="workflow-step">
           <div class="workflow-step-number">02</div>
           <div>
-            <h3>Index</h3>
-            <p>Choose when a document becomes searchable. Keyword and semantic indexes stay scoped to your account.</p>
-            <span class="workflow-tag">FTS5 + local embeddings</span>
+            <h3>Step 2 — Account-isolated indexing</h3>
+            <p>When you choose to index a document, text is extracted into page-aware passages within an isolated database. Fast keyword search is available across all plans, while AI Pro adds local semantic vectors.</p>
+            <span class="workflow-tag">Full-text search · Local embeddings · User isolation</span>
           </div>
         </article>
         <article class="workflow-step">
           <div class="workflow-step-number">03</div>
           <div>
-            <h3>Understand</h3>
-            <p>Ask focused questions and receive grounded answers from retrieved evidence, with sources available when you need them.</p>
-            <span class="workflow-tag">Local Gemma + citations</span>
+            <h3>Step 3 — Grounded local Q&amp;A</h3>
+            <p>Ask questions in plain language. CipherQ retrieves matching excerpts, supplies them to the local model, and returns an answer citing exact filenames and page numbers.</p>
+            <span class="workflow-tag">Local model inference · Page citations · Grounded evidence</span>
           </div>
         </article>
       </div>
-      <div class="architecture-strip">
-        <div>
-          <span class="eyebrow">Designed for ownership</span>
-          <h3>Public interface. Private compute.</h3>
-        </div>
-        <div class="architecture-points">
-          <span><strong>01</strong> Static Pages UI</span>
-          <span><strong>02</strong> HTTPS API boundary</span>
-          <span><strong>03</strong> Arduino UNO Q runtime</span>
-          <span><strong>04</strong> Loopback-only model service</span>
-        </div>
+    </section>
+
+    <!-- Who is CipherQ for? -->
+    <section class="container section" id="audiences">
+      <div class="section-heading">
+        <div class="eyebrow">Audience</div>
+        <h2 class="text-2xl">Who is CipherQ for?</h2>
+        <p class="text-base">Designed for individuals and teams seeking data ownership, reliable document retrieval, and verifiable answers.</p>
+      </div>
+      <div class="grid grid-4 audience-grid">
+        <article class="card audience-card">
+          <div class="eyebrow">Academics</div>
+          <h3 class="text-lg">Students &amp; Researchers</h3>
+          <p class="text-sm">Organize research literature, course notes, and study papers. Search large document collections and query texts with exact page citations to support your work.</p>
+        </article>
+        <article class="card audience-card">
+          <div class="eyebrow">Engineering</div>
+          <h3 class="text-lg">Software Developers</h3>
+          <p class="text-sm">Store technical documentation, architecture specs, and development notes in a private vault with fast keyword retrieval and local AI question answering.</p>
+        </article>
+        <article class="card audience-card">
+          <div class="eyebrow">Research</div>
+          <h3 class="text-lg">Analysts &amp; Writers</h3>
+          <p class="text-sm">Explore deep document archives using semantic search to discover connections across reports and reference materials, supported by direct source citations.</p>
+        </article>
+        <article class="card audience-card">
+          <div class="eyebrow">Privacy</div>
+          <h3 class="text-lg">Privacy-Conscious Users</h3>
+          <p class="text-sm">Maintain physical custody of important records, financial documents, and personal notes on hardware you own, with modern search and on-device AI.</p>
+        </article>
       </div>
     </section>
 
+    <!-- Why local AI? -->
+    <section class="container section" id="local-ai">
+      <div class="section-heading">
+        <div class="eyebrow">On-device intelligence</div>
+        <h2 class="text-2xl">Why local AI?</h2>
+        <p class="text-base">The advantages of running intelligence on hardware you control, alongside practical deployment considerations.</p>
+      </div>
+      <div class="grid grid-2 local-ai-grid">
+        <article class="card">
+          <h3 class="text-lg">Advantages of local intelligence</h3>
+          <ul class="benefit-list">
+            <li>
+              <strong>Data ownership:</strong> Your documents, search queries, and embeddings remain entirely on your personal server hardware.
+            </li>
+            <li>
+              <strong>Predictable operation:</strong> Enjoy uninterrupted access without per-query service fees, subscription tiers, or external rate limits.
+            </li>
+            <li>
+              <strong>Offline readiness:</strong> Search, explore, and query your indexed documents whenever you need them, even without internet connectivity.
+            </li>
+            <li>
+              <strong>Transparent architecture:</strong> Inspect the full open-source pipeline, retrieval logic, and local model integration on your system.
+            </li>
+          </ul>
+        </article>
+        <article class="card">
+          <h3 class="text-lg">Practical hardware considerations</h3>
+          <ul class="tradeoff-list">
+            <li>
+              <strong>Memory allocation:</strong> Compact systems like Arduino UNO Q share unified memory between the operating system, storage database, and model runtime.
+            </li>
+            <li>
+              <strong>Purpose-built models:</strong> Local inference uses efficient, quantized compact models optimized for agile responses on personal hardware.
+            </li>
+            <li>
+              <strong>Device throughput:</strong> Response times scale naturally with the host processor and hardware capabilities of your chosen device.
+            </li>
+            <li>
+              <strong>Hardware stewardship:</strong> Physical server uptime, network configuration, and backup schedules remain directly under your management.
+            </li>
+          </ul>
+        </article>
+      </div>
+    </section>
+
+    <!-- Pricing Section -->
     <section class="section pricing-section" id="pricing">
       <div class="section-heading">
-        <div class="eyebrow">Plans that stay understandable</div>
+        <div class="eyebrow">Transparent Pricing</div>
         <h2 class="text-2xl">Start free. Upgrade your way.</h2>
-        <p class="text-base">Choose the storage and AI capabilities that suit your workflow. All plans use the same cryptographic protections.</p>
+        <p class="text-base">Choose the storage quota and AI capabilities that suit your workflow. Every plan includes the same core cryptographic protections.</p>
       </div>
       <div class="grid grid-4 pricing-grid">
         <article class="card price-card" data-plan-id="free">
           <span class="badge badge-free">Free</span>
           <div class="price">₹0</div>
-          <p class="muted">A capable starting point for essential files.</p>
+          <p class="muted">Perfect for individuals getting started with private file storage and fast search.</p>
           <ul>
-            <li>1 GB storage</li>
+            <li>1 GB storage quota</li>
             <li>Encrypted file vault</li>
-            <li>Upload, download, and supported deletion</li>
+            <li>Upload, download, and deletion</li>
             <li>Keyword search</li>
-            <li>No local AI document Q&amp;A</li>
           </ul>
           <button class="btn btn-outline public-plan-action" data-mode="register">Get started free</button>
         </article>
         <article class="card price-card" data-plan-id="privateVault">
-          <span class="badge badge-premium">Private Vault</span>
+          <span class="badge badge-premium">Premium</span>
           <div class="price">₹100 <span class="muted price-period">/ month</span></div>
-          <p class="muted">A larger encrypted vault for files and everyday document work.</p>
+          <p class="muted">Ideal for users who need expanded storage capacity for regular document access.</p>
           <ul>
-            <li>5 GB storage</li>
+            <li>5 GB storage quota</li>
             <li>Encrypted file vault</li>
             <li>Keyword search</li>
-            <li>Existing resource-conscious concurrency limits</li>
+            <li>Resource-conscious concurrency management</li>
           </ul>
-          <button class="btn btn-outline public-plan-action" data-mode="register">Choose Private Vault</button>
+          <button class="btn btn-outline public-plan-action" data-mode="register">Choose Premium</button>
         </article>
         <article class="card price-card featured" data-plan-id="vaultAI">
-          <span class="badge badge-premium">Vault + AI</span>
+          <span class="badge badge-premium">AI Pro</span>
           <div class="price">₹150 <span class="muted price-period">/ month</span></div>
-          <p class="muted">The complete private workspace with local retrieval and AI assistance.</p>
+          <p class="muted">Designed for users seeking search and on-device AI document question answering.</p>
           <ul>
-            <li>5 GB storage</li>
+            <li>5 GB storage quota</li>
             <li>Encrypted file vault</li>
             <li>Keyword and semantic search</li>
-            <li>Local AI document Q&amp;A</li>
-            <li>100 local AI queries / day</li>
+            <li>Local AI document question answering</li>
+            <li>100 local AI queries per day</li>
           </ul>
-          <button class="btn btn-primary public-plan-action" data-mode="register">Choose Vault + AI</button>
+          <button class="btn btn-primary public-plan-action" data-mode="register">Choose AI Pro</button>
         </article>
         <article class="card price-card price-card-muted" data-plan-id="payg">
           <span class="badge">Coming soon</span>
           <div class="price price-payg">Pay as you go</div>
-          <p class="muted">Unlimited storage with Premium-equivalent capabilities, coming soon.</p>
+          <p class="muted">Upcoming plan offering flexible storage quotas for intensive document workflows.</p>
           <ul>
             <li>Unlimited storage</li>
             <li>Encrypted file vault</li>
             <li>Keyword and semantic search</li>
-            <li>Local AI document Q&amp;A</li>
-            <li>Existing resource-conscious concurrency limits</li>
+            <li>Local AI document question answering</li>
+            <li>Applicable concurrency limits</li>
           </ul>
           <button class="btn btn-outline" type="button" disabled>Coming soon</button>
         </article>
       </div>
+
+      <p class="pricing-notice muted text-center" style="margin-top:20px; font-size:0.875rem;">
+        Note: Automated online payment processing and self-service subscriptions are currently in active development. Plan tiering is enforced by the backend and managed administratively for preview instances.
+      </p>
+
       <div class="comparison-wrap">
-        <div class="comparison-heading">
-          <div>
-            <div class="eyebrow">At a glance</div>
-            <h3 class="text-lg">Compare the essentials</h3>
-          </div>
-        </div>
         <div class="comparison-scroll">
           <table class="comparison-table">
             <thead class="text-xs">
-              <tr><th scope="col">Capability</th><th scope="col">Free</th><th scope="col">Private Vault</th><th scope="col">Vault + AI</th><th scope="col">Pay as you go</th></tr>
+              <tr>
+                <th scope="col">Capability</th>
+                <th scope="col">Free</th>
+                <th scope="col">Premium</th>
+                <th scope="col">AI Pro</th>
+                <th scope="col">Pay as you go</th>
+              </tr>
             </thead>
             <tbody class="text-sm">
-              <tr><th scope="row">Storage quota</th><td data-label="Free">1 GB</td><td data-label="Private Vault">5 GB</td><td data-label="Vault + AI">5 GB</td><td data-label="Pay as you go">Unlimited</td></tr>
-              <tr><th scope="row">Encrypted vault</th><td data-label="Free">Included</td><td data-label="Private Vault">Included</td><td data-label="Vault + AI">Included</td><td data-label="Pay as you go">Included</td></tr>
-              <tr><th scope="row">Keyword search</th><td data-label="Free">Included</td><td data-label="Private Vault">Included</td><td data-label="Vault + AI">Included</td><td data-label="Pay as you go">Included</td></tr>
-              <tr><th scope="row">Semantic search</th><td data-label="Free">Not included</td><td data-label="Private Vault">Not included</td><td data-label="Vault + AI">Included</td><td data-label="Pay as you go">Included</td></tr>
-              <tr><th scope="row">Local AI Q&amp;A</th><td data-label="Free">Not included</td><td data-label="Private Vault">Not included</td><td data-label="Vault + AI">Included</td><td data-label="Pay as you go">Included</td></tr>
-              <tr><th scope="row">Price</th><td data-label="Free">₹0</td><td data-label="Private Vault">₹100/month</td><td data-label="Vault + AI">₹150/month</td><td data-label="Pay as you go">Coming soon</td></tr>
+              <tr>
+                <th scope="row">Storage quota</th>
+                <td data-label="Free">1 GB</td>
+                <td data-label="Premium">5 GB</td>
+                <td data-label="AI Pro">5 GB</td>
+                <td data-label="Pay as you go">Unlimited</td>
+              </tr>
+              <tr>
+                <th scope="row">Encrypted vault</th>
+                <td data-label="Free">Included</td>
+                <td data-label="Premium">Included</td>
+                <td data-label="AI Pro">Included</td>
+                <td data-label="Pay as you go">Included</td>
+              </tr>
+              <tr>
+                <th scope="row">Upload, download &amp; deletion</th>
+                <td data-label="Free">Included</td>
+                <td data-label="Premium">Included</td>
+                <td data-label="AI Pro">Included</td>
+                <td data-label="Pay as you go">Included</td>
+              </tr>
+              <tr>
+                <th scope="row">Keyword search</th>
+                <td data-label="Free">Included</td>
+                <td data-label="Premium">Included</td>
+                <td data-label="AI Pro">Included</td>
+                <td data-label="Pay as you go">Included</td>
+              </tr>
+              <tr>
+                <th scope="row">Semantic search</th>
+                <td data-label="Free">Not included</td>
+                <td data-label="Premium">Not included</td>
+                <td data-label="AI Pro">Included</td>
+                <td data-label="Pay as you go">Included</td>
+              </tr>
+              <tr>
+                <th scope="row">Local AI document Q&amp;A</th>
+                <td data-label="Free">Not included</td>
+                <td data-label="Premium">Not included</td>
+                <td data-label="AI Pro">Included</td>
+                <td data-label="Pay as you go">Included</td>
+              </tr>
+              <tr>
+                <th scope="row">Daily AI query allowance</th>
+                <td data-label="Free">—</td>
+                <td data-label="Premium">—</td>
+                <td data-label="AI Pro">100 queries / day</td>
+                <td data-label="Pay as you go">Subject to limits</td>
+              </tr>
+              <tr>
+                <th scope="row">Monthly price</th>
+                <td data-label="Free">₹0</td>
+                <td data-label="Premium">₹100/month</td>
+                <td data-label="AI Pro">₹150/month</td>
+                <td data-label="Pay as you go">Coming soon</td>
+              </tr>
             </tbody>
           </table>
         </div>
       </div>
     </section>
 
+    <!-- Technical Security Disclosures Section -->
     <section class="container section" id="security">
-      <div class="card security-panel">
-        <div class="section-heading">
-          <div class="eyebrow">Security, without shortcuts</div>
-          <h2>Privacy, explained honestly.</h2>
-          <p>CipherQ uses server-managed encryption and local AI processing. The server holds the master key and decrypts authorized content in memory when required.</p>
-        </div>
-        <p class="muted">CipherQ is not an end-to-end encrypted or zero-knowledge service. This boundary is necessary for authorized downloads, indexing, and local retrieval. Read the complete <a href="security.html">threat model and security disclosures</a>.</p>
+      <div class="section-heading">
+        <div class="eyebrow">Technical disclosure</div>
+        <h2 class="text-2xl">Security &amp; privacy disclosures</h2>
+        <p class="text-base">CipherQ is engineered with transparent cryptographic boundaries and verifiable local processing. We do not make misleading marketing claims.</p>
+      </div>
+
+      <div class="grid grid-2 security-grid">
+        <article class="card security-card">
+          <div class="security-badge-wrap">
+            <span class="security-badge security-badge-warning">Architectural disclosure</span>
+          </div>
+          <h3 class="text-lg">Server-managed vault (Not E2EE / Not Zero-Knowledge)</h3>
+          <p class="text-sm">CipherQ is <strong>not</strong> end-to-end encrypted or zero-knowledge. The server holds the master key and decrypts authorized files into server memory during downloads and text extraction. Anyone with host system administrator access can inspect key material.</p>
+        </article>
+
+        <article class="card security-card">
+          <div class="security-badge-wrap">
+            <span class="security-badge security-badge-info">Cryptographic method</span>
+          </div>
+          <h3 class="text-lg">Authenticated encryption &amp; key wrapping</h3>
+          <p class="text-sm">Files are encrypted with unique per-file Data Encryption Keys using streaming authenticated encryption (AEAD), wrapped under a protected server master key. Full cryptographic specifications are detailed in our technical security disclosures.</p>
+        </article>
+
+        <article class="card security-card">
+          <div class="security-badge-wrap">
+            <span class="security-badge security-badge-info">Access &amp; authentication</span>
+          </div>
+          <h3 class="text-lg">Password hashing &amp; account isolation</h3>
+          <p class="text-sm">User passwords are protected with modern memory-hard hashing. User sessions use cryptographically secure random tokens, and all document and search operations enforce strict tenant isolation.</p>
+        </article>
+
+        <article class="card security-card">
+          <div class="security-badge-wrap">
+            <span class="security-badge security-badge-info">Processing location</span>
+          </div>
+          <h3 class="text-lg">Local search, embeddings &amp; AI</h3>
+          <p class="text-sm">Search indexing, text embeddings, and language model inference run on the local server host. External telemetry is disabled; document contents and queries are never sent to third-party cloud services.</p>
+        </article>
+
+        <article class="card security-card">
+          <div class="security-badge-wrap">
+            <span class="security-badge security-badge-warning">Network &amp; metadata</span>
+          </div>
+          <h3 class="text-lg">Metadata &amp; transport security</h3>
+          <p class="text-sm">The database stores basic file metadata (names, sizes, timestamps). When hosting CipherQ outside localhost, operators must configure HTTPS or a secure VPN to protect session cookies and file transfers over the network.</p>
+        </article>
+
+        <article class="card security-card">
+          <div class="security-badge-wrap">
+            <span class="security-badge security-badge-info">Threat model</span>
+          </div>
+          <h3 class="text-lg">Threat assumptions &amp; boundaries</h3>
+          <p class="text-sm">CipherQ protects your data against remote cloud interception, multi-tenant leakage, and third-party AI training. It does not defend against an attacker with root OS access or physical hardware extraction.</p>
+        </article>
       </div>
     </section>
 
+    <!-- Frequently Asked Questions -->
+    <section class="container section" id="faq">
+      <div class="section-heading">
+        <div class="eyebrow">FAQ</div>
+        <h2 class="text-2xl">Frequently asked questions</h2>
+        <p class="text-base">Clear answers about CipherQ's architecture and capabilities.</p>
+      </div>
+
+      <div class="faq-list">
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>What is CipherQ?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            CipherQ is an open-source private cloud storage vault and local AI workspace designed for compact hardware such as Arduino UNO Q and Debian Linux. It allows users to store encrypted files, search document contents, and query their files using on-device language models.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Where are my files stored?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            Files are stored directly on your server host in an encrypted vault directory. CipherQ does not upload your files or metadata to third-party cloud storage providers.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How does file encryption work?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            Each file is encrypted with an individual Data Encryption Key (DEK) using authenticated streaming encryption. The DEK is wrapped under the server's master key and stored in the database. During download or indexing, the server unwraps the key and decrypts the stream in memory.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Is CipherQ end-to-end encrypted?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            No. CipherQ uses a server-managed vault rather than end-to-end encryption (E2EE) or zero-knowledge encryption. The server holds the master key and decrypts document text into memory during file downloads and document indexing for AI processing.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Does the AI assistant send documents to an external service?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            No. AI inference, text embeddings, and keyword indexing execute entirely on the local server host. Outbound model requests are restricted strictly to loopback addresses, and third-party telemetry is disabled.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>What is the difference between keyword and semantic search?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            Keyword search looks for exact terms and phrases with relevance ranking. Semantic search converts text into local mathematical vector embeddings to match concepts, ideas, and synonyms even when different terminology is used.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Which file formats are supported?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            For secure vault storage, all file types are supported without restriction. For local AI document indexing and text search, CipherQ currently supports PDF, Plain Text (.txt), Markdown (.md), CSV, and JSON files.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>What are the storage and AI query limits?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            The Free plan includes 1 GB storage and keyword search. The Premium plan includes 5 GB storage and keyword search. The AI Pro plan includes 5 GB storage, semantic search, and up to 100 on-device AI queries per day.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How do I install and configure CipherQ?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            Clone the GitHub repository, install dependencies using <code>uv</code>, generate your server master key using the key manager CLI, and start the service with Uvicorn. Detailed instructions are available in our documentation.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Which features are available now?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            Available features include authenticated streaming file encryption, integrity verification on download, keyword search, local semantic vector search, on-device AI document question answering with page citations, and administrative tier management.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>Is CipherQ open source?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            Yes. CipherQ is open-source software under the MIT license. You can inspect the source code, contribute improvements, or self-host your own instance from our GitHub repository.
+          </div>
+        </details>
+
+        <details class="faq-item">
+          <summary class="faq-question">
+            <span>How do the paid plans work?</span>
+            <svg class="faq-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"></polyline></svg>
+          </summary>
+          <div class="faq-answer">
+            Automated billing and self-service payment gateway workflows are currently in active development. Plan tiering is enforced by backend services and can be configured administratively for preview deployments.
+          </div>
+        </details>
+      </div>
+    </section>
+
+
+    <!-- Final CTA Section -->
     <section class="container section">
       <div class="cta">
-        <div class="eyebrow">A better place for important work</div>
-        <h2>Make room for better thinking.</h2>
-        <p>Your documents deserve a focused workspace. Start with a private vault and add local AI when you need it.</p>
+        <div class="eyebrow">Get Started</div>
+        <h2>Take control of your documents and local AI.</h2>
+        <p>Start with an encrypted vault on your own hardware, and add local AI document search and question answering when you need it.</p>
         <div class="hero-actions">
           <button id="final-get-started" class="btn btn-primary">Get started free</button>
           <a class="btn btn-outline cta-outline" href="#pricing">Compare plans</a>
@@ -255,14 +628,20 @@
 
   <footer class="footer">
     <div class="container footer-inner">
-      <div><strong>CipherQ</strong><br><span>Open-source private cloud and local AI. MIT licensed.</span></div>
+      <div>
+        <strong>CipherQ</strong><br>
+        <span>Open-source private cloud and local AI. MIT licensed.</span>
+      </div>
       <ul class="footer-links">
+        <li><a href="#features">Features</a></li>
         <li><a href="#pricing">Pricing</a></li>
         <li><a href="security.html">Security disclosures</a></li>
         <li><a href="https://github.com/nimalan-parameswaran/CipherQ" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://github.com/nimalan-parameswaran/CipherQ/blob/main/LICENSE" target="_blank" rel="noopener">License</a></li>
       </ul>
     </div>
   </footer>
+
   <script src="js/config.js"></script>
   <script type="module" src="js/app.js"></script>
 </body>

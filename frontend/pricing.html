@@ -1,1 +1,71 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=index.html#pricing"><title>Pricing — CipherQ</title><link rel="stylesheet" href="css/styles.css"></head><body><main class="container section"><div class="card"><div class="eyebrow">Pricing</div><h1>Plans have moved to the CipherQ landing page.</h1><p class="muted" style="margin:12px 0 20px">Continue to the pricing section for the current public overview.</p><a class="btn btn-primary" href="index.html#pricing">View pricing</a></div></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta http-equiv="refresh" content="0;url=index.html#pricing">
+  <title>Pricing &amp; Plans — CipherQ</title>
+  <script>
+    (function() {
+      var SUN_ICON = '<svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
+      var MOON_ICON = '<svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>';
+      function getTheme() {
+        try {
+          var stored = localStorage.getItem('cipherq-theme');
+          if (stored === 'dark' || stored === 'light') return stored;
+        } catch (e) {}
+        return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      function applyTheme(theme, persist) {
+        var selected = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', selected);
+        if (document.body) document.body.setAttribute('data-theme', selected);
+        if (persist) {
+          try { localStorage.setItem('cipherq-theme', selected); } catch (e) {}
+        }
+        var isDark = selected === 'dark';
+        var label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+        document.querySelectorAll('#theme-toggle').forEach(function(btn) {
+          btn.setAttribute('aria-label', label);
+          btn.setAttribute('title', label);
+          btn.innerHTML = isDark ? SUN_ICON : MOON_ICON;
+        });
+      }
+      window.__applyTheme = applyTheme;
+      applyTheme(getTheme(), false);
+      document.addEventListener('DOMContentLoaded', function() {
+        applyTheme(getTheme(), false);
+        document.querySelectorAll('#theme-toggle').forEach(function(btn) {
+          btn.onclick = function() {
+            var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            applyTheme(current === 'dark' ? 'light' : 'dark', true);
+          };
+        });
+      });
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+          try {
+            if (!localStorage.getItem('cipherq-theme')) {
+              applyTheme(e.matches ? 'dark' : 'light', false);
+            }
+          } catch (err) {}
+        });
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/contrast-overrides.css">
+</head>
+<body>
+  <main class="container section">
+    <div class="card" style="max-width: 680px; margin: 40px auto; padding: 32px;">
+      <div class="eyebrow">Pricing &amp; Plans</div>
+      <h1 style="font-size: 1.8rem; margin: 10px 0 16px;">Plans and capabilities</h1>
+      <p class="muted" style="margin-bottom: 20px; line-height: 1.6;">
+        CipherQ offers simple, transparent plan tiers: <strong>Free (₹0)</strong> for essential vault storage, <strong>Premium (₹100/month)</strong> for 5 GB encrypted storage with keyword search, <strong>AI Pro (₹150/month)</strong> for 5 GB with local semantic search and on-device AI document question answering, and an upcoming <strong>Pay as you go</strong> tier.
+      </p>
+      <a class="btn btn-primary" href="index.html#pricing">Compare plans on landing page</a>
+    </div>
+  </main>
+</body>
+</html>

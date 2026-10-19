@@ -9,32 +9,33 @@ window.PLANS_CONFIG = {
     storage: '1 GB',
     aiLimit: '0 queries / day',
     features: [
+      '1 GB storage quota',
       'Encrypted file vault',
-      'Upload, download, and supported deletion',
-      'Keyword search',
-      'No local AI document Q&A'
+      'Upload, download, and deletion',
+      'Keyword search'
     ],
     badgeClass: 'badge-free',
     isComingSoon: false
   },
   privateVault: {
     id: 'private-vault',
-    name: 'Private Vault',
+    name: 'Premium',
     price: '₹100',
     period: '/ month',
     storage: '5 GB',
     aiLimit: '0 queries / day',
     features: [
+      '5 GB storage quota',
       'Encrypted file vault',
       'Keyword search',
-      'Existing resource-conscious concurrency limits'
+      'Resource-conscious concurrency management'
     ],
     badgeClass: 'badge-premium',
     isComingSoon: false
   },
   vaultAI: {
     id: 'vault-ai',
-    name: 'Vault + AI',
+    name: 'AI Pro',
     price: '₹150',
     period: '/ month',
     storage: '5 GB',

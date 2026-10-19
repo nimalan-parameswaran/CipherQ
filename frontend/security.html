@@ -1,1 +1,263 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="refresh" content="0;url=index.html#security"><title>Security disclosures — CipherQ</title><link rel="stylesheet" href="css/styles.css"></head><body><main class="container section"><div class="card"><div class="eyebrow">Security</div><h1>Security disclosures have moved to the CipherQ landing page.</h1><p class="muted" style="margin:12px 0 20px">Review CipherQ's server-managed encryption boundaries and threat model.</p><a class="btn btn-primary" href="index.html#security">View security disclosures</a></div></main></body></html>
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="CipherQ technical security model, encryption architecture, and privacy disclosures.">
+  <title>Security &amp; Privacy Disclosures — CipherQ</title>
+  <script>
+    (function() {
+      var SUN_ICON = '<svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
+      var MOON_ICON = '<svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>';
+      function getTheme() {
+        try {
+          var stored = localStorage.getItem('cipherq-theme');
+          if (stored === 'dark' || stored === 'light') return stored;
+        } catch (e) {}
+        return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      function applyTheme(theme, persist) {
+        var selected = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', selected);
+        if (document.body) document.body.setAttribute('data-theme', selected);
+        if (persist) {
+          try { localStorage.setItem('cipherq-theme', selected); } catch (e) {}
+        }
+        var isDark = selected === 'dark';
+        var label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+        document.querySelectorAll('#theme-toggle').forEach(function(btn) {
+          btn.setAttribute('aria-label', label);
+          btn.setAttribute('title', label);
+          btn.innerHTML = isDark ? SUN_ICON : MOON_ICON;
+        });
+      }
+      window.__applyTheme = applyTheme;
+      applyTheme(getTheme(), false);
+      document.addEventListener('DOMContentLoaded', function() {
+        applyTheme(getTheme(), false);
+        document.querySelectorAll('#theme-toggle').forEach(function(btn) {
+          btn.onclick = function() {
+            var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            applyTheme(current === 'dark' ? 'light' : 'dark', true);
+          };
+        });
+      });
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+          try {
+            if (!localStorage.getItem('cipherq-theme')) {
+              applyTheme(e.matches ? 'dark' : 'light', false);
+            }
+          } catch (err) {}
+        });
+      }
+    })();
+  </script>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/contrast-overrides.css">
+</head>
+<body>
+  <header class="site-header">
+    <nav class="site-nav" aria-label="Main navigation">
+      <a class="brand" href="index.html" aria-label="CipherQ home">
+        <span class="brand-mark">Q</span>
+        <span class="brand-name">CipherQ</span>
+      </a>
+      <button class="mobile-menu" id="mobile-menu" aria-label="Open navigation" aria-expanded="false">☰</button>
+      <ul class="site-links" id="site-links">
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#workflow">How it works</a></li>
+        <li><a href="index.html#pricing">Pricing</a></li>
+        <li><a href="security.html" class="active">Security</a></li>
+        <li><a href="index.html#faq">FAQ</a></li>
+      </ul>
+      <div class="nav-actions">
+        <button id="theme-toggle" class="btn btn-outline btn-sm" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
+        <button id="btn-nav-login" class="btn btn-outline btn-sm">Log in</button>
+        <button id="btn-nav-register" class="btn btn-dark btn-sm">Get started free</button>
+      </div>
+    </nav>
+  </header>
+
+  <main class="container section" style="max-width: 920px; padding-top: 40px;">
+    <div style="margin-bottom: 32px;">
+      <div class="eyebrow">Technical architecture</div>
+      <h1 style="font-size: clamp(2rem, 5vw, 2.75rem); line-height: 1.15; margin: 8px 0 12px;">Security &amp; Privacy Disclosures</h1>
+      <p class="muted" style="font-size: 1.1rem; line-height: 1.6;">
+        CipherQ is engineered with cryptographic rigor, transparent architectural boundaries, and verifiable local processing. This document serves as a technical disclosure of our encryption implementation, memory boundaries, and threat model.
+      </p>
+    </div>
+
+    <!-- Disclosure 1: Server-Managed Vault, Not E2EE -->
+    <article class="card" style="margin-bottom: 24px; padding: 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="security-badge security-badge-warning">Architectural boundary</span>
+        <span class="muted text-xs">Section 1</span>
+      </div>
+      <h2 class="text-xl" style="margin-bottom: 12px;">1. Server-Managed Vault (Not End-to-End Encrypted / Not Zero-Knowledge)</h2>
+      <p class="muted" style="margin-bottom: 12px;">
+        In an End-to-End Encrypted (E2EE) or Zero-Knowledge architecture, only the client device holds decryption keys, and the server never encounters plaintext under any condition.
+      </p>
+      <p class="muted" style="margin-bottom: 12px;">
+        <strong>CipherQ is different:</strong> To enable streaming file transfers, text extraction, FTS5 keyword indexing, and local on-device AI document question answering without forcing the user's browser to execute heavyweight LLMs, the CipherQ backend must decrypt authorized document content into volatile server RAM. Therefore, CipherQ operates as a <strong>Server-Managed Encrypted Vault</strong>:
+      </p>
+      <ul style="color:var(--text-muted); padding-left: 20px; line-height: 1.7; font-size: 0.95rem;">
+        <li>Each file is encrypted with an independent 256-bit Data Encryption Key (DEK).</li>
+        <li>The server holds the Master Key Encryption Key (KEK) at <code>keys/.vault_master.key</code> (file permissions enforced to 0600 on POSIX).</li>
+        <li>Authorized users request file operations through the authenticated API; the server loads the master key, unwraps the file's DEK, and streams or decrypts content into volatile memory.</li>
+        <li>Anyone with physical hardware access or root privileges on the server host can theoretically inspect memory or read key files. CipherQ protects against external network eavesdropping and cross-user leaks, not host OS compromise.</li>
+      </ul>
+    </article>
+
+    <!-- Disclosure 2: Cryptographic Algorithms & Key Management -->
+    <article class="card" style="margin-bottom: 24px; padding: 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="security-badge security-badge-info">Verified cryptography</span>
+        <span class="muted text-xs">Section 2</span>
+      </div>
+      <h2 class="text-xl" style="margin-bottom: 12px;">2. Cryptographic Algorithms &amp; Key Management</h2>
+      <p class="muted" style="margin-bottom: 12px;">
+        CipherQ adheres strictly to standard, peer-reviewed cryptographic primitives and avoids proprietary or unverified encryption schemes:
+      </p>
+      <ul style="color:var(--text-muted); padding-left: 20px; line-height: 1.7; font-size: 0.95rem;">
+        <li><strong>File Content Encryption:</strong> Streaming authenticated encryption using libsodium's <code>crypto_secretstream_xchacha20poly1305</code> (PyNaCl) in 64 KB blocks. Provides mathematical guarantees against bit-flipping, ciphertext modification, chunk reordering, and truncation attacks.</li>
+        <li><strong>Key Wrapping (Envelope Encryption):</strong> The 256-bit per-file DEK is wrapped under the server's 256-bit Master KEK using AES-256-GCM with a fresh 12-byte cryptographic nonce and authenticated associated data.</li>
+        <li><strong>Key Storage:</strong> The master key resides on the local filesystem at <code>keys/.vault_master.key</code>. The application verifies file permissions at startup and executes an in-memory AEAD self-test before accepting requests.</li>
+        <li><strong>Key Backup:</strong> Master key backups are encrypted into an authenticated container using AES-256-GCM with keys derived via Argon2id (<code>time_cost=3, memory_cost=65536, parallelism=4</code>).</li>
+        <li><strong>Integrity Checksums:</strong> SHA-256 checksums are calculated during streaming upload and recorded in the database, allowing end-to-end integrity verification upon download.</li>
+      </ul>
+    </article>
+
+    <!-- Disclosure 3: Memory & Forensic Erasure Limits -->
+    <article class="card" style="margin-bottom: 24px; padding: 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="security-badge security-badge-warning">Forensic limitations</span>
+        <span class="muted text-xs">Section 3</span>
+      </div>
+      <h2 class="text-xl" style="margin-bottom: 12px;">3. Plaintext Memory &amp; Flash Storage Erasure Limits</h2>
+      <p class="muted" style="margin-bottom: 12px;">
+        We explicitly do not promise 100% forensic data erasure:
+      </p>
+      <ul style="color:var(--text-muted); padding-left: 20px; line-height: 1.7; font-size: 0.95rem;">
+        <li><strong>Volatile Memory (RAM):</strong> During file download streaming, file contents pass through 64 KB memory buffers. During document indexing, extracted text chunks are parsed in memory. While file handles are closed and dereferenced promptly, in high-level managed runtimes (Python), memory garbage collection and OS paging mean memory fragments cannot be forensically zeroed without OS-level <code>mlock</code> controls.</li>
+        <li><strong>Flash Storage (eMMC):</strong> File deletion invokes filesystem unlinking (<code>os.remove</code>). Because NAND flash memory uses a Flash Translation Layer (FTL) with wear-leveling algorithms, physically erased sectors may retain traces of ciphertext until overwritten by subsequent operations. Full physical protection against chip removal requires OS-level Full Disk Encryption (such as Linux LUKS).</li>
+      </ul>
+    </article>
+
+    <!-- Disclosure 4: Authentication & Access Control -->
+    <article class="card" style="margin-bottom: 24px; padding: 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="security-badge security-badge-info">Identity &amp; isolation</span>
+        <span class="muted text-xs">Section 4</span>
+      </div>
+      <h2 class="text-xl" style="margin-bottom: 12px;">4. User Authentication &amp; Multi-Tenant Isolation</h2>
+      <p class="muted" style="margin-bottom: 12px;">
+        Account security is enforced by modern cryptographic standards and database-level tenancy controls:
+      </p>
+      <ul style="color:var(--text-muted); padding-left: 20px; line-height: 1.7; font-size: 0.95rem;">
+        <li><strong>Password Hashing:</strong> Passwords are hashed with Argon2id using recommended parameters (64 MB memory cost, 3 iterations, 4 parallel threads, 32-byte salt). Plaintext passwords are never logged or stored. Constant-time verification prevents timing attacks.</li>
+        <li><strong>Session Security:</strong> Sessions use 256-bit cryptographically secure random tokens. The database stores only SHA-256 hashes of session tokens, preventing session hijack if database backups are inspected. Sessions expire after 24 hours.</li>
+        <li><strong>Rate Limiting:</strong> In-memory sliding window rate limiters restrict authentication endpoints (5 login attempts / minute; 3 registration attempts / minute per IP) to mitigate brute-force attacks.</li>
+        <li><strong>Tenant Isolation:</strong> Multi-tenant isolation is enforced at the database query layer. Every file, chunk, embedding, and search index query requires an explicit <code>WHERE user_id = :user_id</code> filter. Users cannot read, search, or delete another user's documents.</li>
+      </ul>
+    </article>
+
+    <!-- Disclosure 5: Local AI & Processing Boundaries -->
+    <article class="card" style="margin-bottom: 24px; padding: 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="security-badge security-badge-info">Zero cloud transmission</span>
+        <span class="muted text-xs">Section 5</span>
+      </div>
+      <h2 class="text-xl" style="margin-bottom: 12px;">5. Local AI Inference &amp; Zero Cloud API Transmission</h2>
+      <p class="muted" style="margin-bottom: 12px;">
+        All search and AI processing occurs strictly on the local computing environment:
+      </p>
+      <ul style="color:var(--text-muted); padding-left: 20px; line-height: 1.7; font-size: 0.95rem;">
+        <li><strong>Keyword Search:</strong> Performed directly inside the host SQLite database using the FTS5 full-text engine with BM25 ranking.</li>
+        <li><strong>Vector Embeddings:</strong> Generated locally using <code>LocalEmbeddingEngine</code> with subword feature hashing or local ONNX models. External library telemetry is explicitly disabled (<code>HF_HUB_OFFLINE=1</code>, <code>ONNXRUNTIME_TELEMETRY_DISABLED=1</code>).</li>
+        <li><strong>Model Inference:</strong> Handled by a local quantized Gemma service running on the host machine loopback interface (<code>http://127.0.0.1:8081</code>). The backend strictly validates that model URLs resolve only to loopback addresses (127.0.0.1, localhost, ::1) on port 8081; non-loopback destinations are programmatically rejected.</li>
+        <li><strong>Grounded Citations:</strong> Retrieved document excerpts are passed directly to the model as untrusted data context with strict system instructions prohibiting fabrication. If insufficient evidence exists, the system returns an explicit notice.</li>
+      </ul>
+    </article>
+
+    <!-- Disclosure 6: Network Security & Logs -->
+    <article class="card" style="margin-bottom: 24px; padding: 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="security-badge security-badge-warning">Network exposure</span>
+        <span class="muted text-xs">Section 6</span>
+      </div>
+      <h2 class="text-xl" style="margin-bottom: 12px;">6. Network Transport, Logs &amp; Metadata Exposure</h2>
+      <p class="muted" style="margin-bottom: 12px;">
+        Operators and users must understand the boundaries of network communication and metadata logging:
+      </p>
+      <ul style="color:var(--text-muted); padding-left: 20px; line-height: 1.7; font-size: 0.95rem;">
+        <li><strong>LAN Plain HTTP Risk:</strong> Running CipherQ over plain HTTP on a local network (e.g. <code>http://192.168.1.50:8000</code>) provides <strong>zero transport encryption</strong>. Eavesdroppers on the same Wi-Fi or Ethernet network could intercept session cookies and file streams. Deployments accessible outside localhost must configure TLS/HTTPS (e.g., via Nginx reverse proxy with valid certificates or private VPNs like Tailscale).</li>
+        <li><strong>Stored Metadata:</strong> While file contents are encrypted, metadata (original filenames, file sizes, MIME types, and upload timestamps) is stored in plaintext in the SQLite database to support file management and quota enforcement.</li>
+        <li><strong>Application Logging:</strong> Server logs record HTTP request paths, HTTP response status codes, client IP addresses, and error stack traces. Document content, plaintext keys, and passwords are never logged.</li>
+      </ul>
+    </article>
+
+    <!-- Disclosure 7: Threat Model & Assumptions -->
+    <article class="card" style="margin-bottom: 32px; padding: 28px;">
+      <div style="display:flex; justify-content:space-between; align-items:flex-start; gap:16px; flex-wrap:wrap; margin-bottom:12px;">
+        <span class="security-badge security-badge-info">Threat model</span>
+        <span class="muted text-xs">Section 7</span>
+      </div>
+      <h2 class="text-xl" style="margin-bottom: 12px;">7. Threat Assumptions &amp; Explicit Out-of-Scope Risks</h2>
+      <p class="muted" style="margin-bottom: 12px;">
+        Security engineering requires defining explicit threat assumptions:
+      </p>
+      <div class="grid grid-2" style="margin-top: 16px; gap: 16px;">
+        <div style="background:var(--bg-surface-sunken); padding:16px; border-radius:var(--radius-sm);">
+          <strong style="color:var(--accent-primary);">In Scope (Defended)</strong>
+          <ul style="margin-top:8px; padding-left:16px; font-size:0.875rem; color:var(--text-muted); line-height:1.6;">
+            <li>Remote interception of stored vault files.</li>
+            <li>Third-party AI provider data harvesting or prompt training.</li>
+            <li>Unauthorized cross-account document access in multi-user mode.</li>
+            <li>Tampering, bit-flipping, or truncation of encrypted vault files.</li>
+            <li>Credential stuffing via brute-force rate limiting.</li>
+          </ul>
+        </div>
+        <div style="background:var(--bg-surface-sunken); padding:16px; border-radius:var(--radius-sm);">
+          <strong style="color:var(--danger);">Out of Scope (Not Defended)</strong>
+          <ul style="margin-top:8px; padding-left:16px; font-size:0.875rem; color:var(--text-muted); line-height:1.6;">
+            <li>Physical device theft without OS-level Full Disk Encryption (LUKS).</li>
+            <li>Root or administrative operating system compromise on the server host.</li>
+            <li>Side-channel hardware attacks (e.g. cold boot memory extraction).</li>
+            <li>Compromise of client endpoints (keyloggers or browser extension malware).</li>
+          </ul>
+        </div>
+      </div>
+    </article>
+
+    <div style="display:flex; gap:16px; flex-wrap:wrap; align-items:center; margin-bottom:48px;">
+      <a class="btn btn-primary" href="index.html">Back to overview</a>
+      <a class="btn btn-outline" href="https://github.com/nimalan-parameswaran/CipherQ" target="_blank" rel="noopener">View source code</a>
+      <a class="btn btn-outline" href="https://github.com/nimalan-parameswaran/CipherQ/blob/main/docs/threat-model.md" target="_blank" rel="noopener">Read threat model document</a>
+    </div>
+  </main>
+
+  <footer class="footer">
+    <div class="container footer-inner">
+      <div>
+        <strong>CipherQ</strong><br>
+        <span>Open-source private cloud and local AI. MIT licensed.</span>
+      </div>
+      <ul class="footer-links">
+        <li><a href="index.html#features">Features</a></li>
+        <li><a href="index.html#pricing">Pricing</a></li>
+        <li><a href="security.html">Security disclosures</a></li>
+        <li><a href="https://github.com/nimalan-parameswaran/CipherQ" target="_blank" rel="noopener">GitHub</a></li>
+        <li><a href="https://github.com/nimalan-parameswaran/CipherQ/blob/main/LICENSE" target="_blank" rel="noopener">License</a></li>
+      </ul>
+    </div>
+  </footer>
+
+  <script src="js/config.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

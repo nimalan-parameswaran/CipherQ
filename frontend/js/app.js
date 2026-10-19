@@ -13,18 +13,45 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => 
 const isAiPlan = (plan) => ["VAULT_AI", "PREMIUM", "CREATOR"].includes(plan);
 const isGreeting = (query) => /^(hi|hello|hey|hiya|good morning|good afternoon|good evening|how are you)[!.?,\s]*$/i.test(query.trim());
 
-function applyTheme(theme) {
+const SUN_ICON = `<svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>`;
+
+const MOON_ICON = `<svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>`;
+
+function getPreferredTheme() {
+  const stored = localStorage.getItem("cipherq-theme");
+  if (stored === "dark" || stored === "light") return stored;
+  return (window.matchMedia && window.matchMedia("(prefers-color-scheme: dark)").matches) ? "dark" : "light";
+}
+
+function applyTheme(theme, persist = true) {
   const selected = theme === "dark" ? "dark" : "light";
   document.documentElement.setAttribute("data-theme", selected);
-  localStorage.setItem("cipherq-theme", selected);
+  if (document.body) {
+    document.body.setAttribute("data-theme", selected);
+  }
+  if (persist) {
+    try {
+      localStorage.setItem("cipherq-theme", selected);
+    } catch (e) {
+      console.warn("Unable to save theme in localStorage", e);
+    }
+  }
+  const isDark = selected === "dark";
+  const label = isDark ? "Switch to light mode" : "Switch to dark mode";
   document.querySelectorAll("#theme-toggle").forEach((button) => {
-    button.setAttribute("title", selected === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode");
+    button.setAttribute("aria-label", label);
+    button.setAttribute("title", label);
+    button.innerHTML = isDark ? SUN_ICON : MOON_ICON;
   });
 }
 
 function setupThemeToggle() {
   document.querySelectorAll("#theme-toggle").forEach((button) => {
-    button.onclick = () => applyTheme(document.documentElement.getAttribute("data-theme") === "dark" ? "light" : "dark");
+    button.onclick = () => {
+      const current = document.documentElement.getAttribute("data-theme") === "dark" ? "dark" : "light";
+      const next = current === "dark" ? "light" : "dark";
+      applyTheme(next, true);
+    };
   });
 }
 
@@ -98,8 +125,8 @@ function ensureAuthModal() {
               <label class="form-label" for="reg-plan">Plan</label>
               <select class="form-control" id="reg-plan">
                 <option value="FREE">Free · 1 GB</option>
-                <option value="PRIVATE_VAULT">Private Vault · 5 GB</option>
-                <option value="VAULT_AI">Vault + AI · 5 GB + local AI</option>
+                <option value="PRIVATE_VAULT">Premium · 5 GB</option>
+                <option value="VAULT_AI">AI Pro · 5 GB + local AI</option>
               </select>
             </div>
             <button class="btn btn-primary" id="btn-submit-register" type="submit" style="width:100%;margin-top:8px">Create account</button>
@@ -264,18 +291,32 @@ function updateNavbar(user) {
     if (!actions) return;
     if (user) {
       actions.innerHTML = `
+        <button id="theme-toggle" class="btn btn-outline btn-sm" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
         <span class="nav-user" id="user-display">${escapeHtml(user.email)}</span>
         <span class="badge ${user.plan_type !== "FREE" ? "badge-premium" : "badge-free"}" id="plan-badge">${escapeHtml(user.plan_type)}</span>
         <a class="btn btn-outline btn-sm" href="dashboard.html">Workspace</a>
         <button class="btn btn-dark btn-sm" id="btn-nav-logout">Log out</button>`;
+      applyTheme(document.documentElement.getAttribute("data-theme") || getPreferredTheme(), false);
+      setupThemeToggle();
       document.getElementById("btn-nav-logout")?.addEventListener("click", async () => {
         await api.logout();
         window.location.href = "index.html";
       });
     } else {
       actions.innerHTML = `
+        <button id="theme-toggle" class="btn btn-outline btn-sm" aria-label="Toggle theme" title="Toggle theme">
+          <svg class="theme-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path>
+          </svg>
+        </button>
         <button id="btn-nav-login" class="btn btn-outline btn-sm">Log in</button>
-        <button id="btn-nav-register" class="btn btn-dark btn-sm">Get started</button>`;
+        <button id="btn-nav-register" class="btn btn-dark btn-sm">Get started free</button>`;
+      applyTheme(document.documentElement.getAttribute("data-theme") || getPreferredTheme(), false);
+      setupThemeToggle();
       document.getElementById("btn-nav-login")?.addEventListener("click", () => openAuthModal("login"));
       document.getElementById("btn-nav-register")?.addEventListener("click", () => openAuthModal("register"));
     }
@@ -289,6 +330,13 @@ function setupMobileNav() {
     button.addEventListener("click", () => {
       const open = links.classList.toggle("open");
       button.setAttribute("aria-expanded", String(open));
+    });
+
+    links.querySelectorAll("a").forEach((anchor) => {
+      anchor.addEventListener("click", () => {
+        links.classList.remove("open");
+        button.setAttribute("aria-expanded", "false");
+      });
     });
   }
 
@@ -979,7 +1027,7 @@ async function initAccount(user) {
   if (!button) return;
 
   const target = user.plan_type === "FREE" ? "VAULT_AI" : "FREE";
-  button.textContent = target === "VAULT_AI" ? "Upgrade to Vault + AI" : "Downgrade to Free";
+  button.textContent = target === "VAULT_AI" ? "Upgrade to AI Pro" : "Downgrade to Free";
 
   button.addEventListener("click", async () => {
     const token = window.prompt(`Enter administrative token to change ${user.email} to ${target}:`);
@@ -1001,10 +1049,18 @@ async function initAccount(user) {
 }
 
 async function initApp() {
-  const savedTheme = localStorage.getItem("cipherq-theme") ||
-    (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
-  applyTheme(savedTheme);
+  const currentTheme = getPreferredTheme();
+  applyTheme(currentTheme, false);
   setupThemeToggle();
+
+  if (window.matchMedia) {
+    window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+      if (!localStorage.getItem("cipherq-theme")) {
+        applyTheme(e.matches ? "dark" : "light", false);
+      }
+    });
+  }
+
   ensureAuthModal();
   let user;
   try {
@@ -1027,10 +1083,21 @@ async function initApp() {
     }
     updateNavbar(null);
     setupMobileNav();
+    updatePricingUI();
+
+    const page = location.pathname.split("/").pop() || "index.html";
+    if (page === "index.html" || page === "") {
+      document.querySelectorAll(".public-plan-action").forEach((button) =>
+        button.addEventListener("click", () => openAuthModal(button.dataset.mode || "register"))
+      );
+      ["hero-get-started", "final-get-started"].forEach((id) =>
+        document.getElementById(id)?.addEventListener("click", () => openAuthModal("register"))
+      );
+    }
     return;
   }
   updateNavbar(user);
-  applyTheme(localStorage.getItem("cipherq-theme") || "light");
+  applyTheme(document.documentElement.getAttribute("data-theme") || getPreferredTheme(), false);
   setupThemeToggle();
   setupMobileNav();
 

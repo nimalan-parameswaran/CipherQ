@@ -6,11 +6,54 @@
   <title>Account &amp; Plan — CipherQ</title>
   <script>
     (function() {
-      var t = localStorage.getItem('cipherq-theme') || 'dark';
-      document.documentElement.setAttribute('data-theme', t);
+      var SUN_ICON = '<svg class="theme-icon theme-icon-sun" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2"></path><path d="M12 20v2"></path><path d="m4.93 4.93 1.41 1.41"></path><path d="m17.66 17.66 1.41 1.41"></path><path d="M2 12h2"></path><path d="M20 12h2"></path><path d="m6.34 17.66-1.41 1.41"></path><path d="m19.07 4.93-1.41 1.41"></path></svg>';
+      var MOON_ICON = '<svg class="theme-icon theme-icon-moon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"></path></svg>';
+      function getTheme() {
+        try {
+          var stored = localStorage.getItem('cipherq-theme');
+          if (stored === 'dark' || stored === 'light') return stored;
+        } catch (e) {}
+        return (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+      }
+      function applyTheme(theme, persist) {
+        var selected = theme === 'dark' ? 'dark' : 'light';
+        document.documentElement.setAttribute('data-theme', selected);
+        if (document.body) document.body.setAttribute('data-theme', selected);
+        if (persist) {
+          try { localStorage.setItem('cipherq-theme', selected); } catch (e) {}
+        }
+        var isDark = selected === 'dark';
+        var label = isDark ? 'Switch to light mode' : 'Switch to dark mode';
+        document.querySelectorAll('#theme-toggle').forEach(function(btn) {
+          btn.setAttribute('aria-label', label);
+          btn.setAttribute('title', label);
+          btn.innerHTML = isDark ? SUN_ICON : MOON_ICON;
+        });
+      }
+      window.__applyTheme = applyTheme;
+      applyTheme(getTheme(), false);
+      document.addEventListener('DOMContentLoaded', function() {
+        applyTheme(getTheme(), false);
+        document.querySelectorAll('#theme-toggle').forEach(function(btn) {
+          btn.onclick = function() {
+            var current = document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light';
+            applyTheme(current === 'dark' ? 'light' : 'dark', true);
+          };
+        });
+      });
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', function(e) {
+          try {
+            if (!localStorage.getItem('cipherq-theme')) {
+              applyTheme(e.matches ? 'dark' : 'light', false);
+            }
+          } catch (err) {}
+        });
+      }
     })();
   </script>
   <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/contrast-overrides.css">
 </head>
 <body class="workspace-body">
   <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
@@ -208,13 +251,13 @@
             </div>
           </article>
 
-          <!-- Private Vault Plan -->
+          <!-- Premium Plan -->
           <article class="card plan-tier-card" id="card-plan-private-vault">
             <div>
               <div class="plan-tier-header">
-                <span class="badge badge-premium">Private Vault</span>
+                <span class="badge badge-premium">Premium</span>
                 <div class="plan-tier-price">₹100 <span class="muted" style="font-size:0.9rem;font-weight:500">/ month</span></div>
-                <p class="muted">Expanded encrypted storage for personal documents.</p>
+                <p class="muted">Expanded encrypted storage and keyword search for regular document work.</p>
               </div>
               <ul class="plan-feature-list">
                 <li>
@@ -229,6 +272,10 @@
                   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
                   <span>SQLite FTS5 keyword search</span>
                 </li>
+                <li>
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                  <span>Existing resource-conscious concurrency limits</span>
+                </li>
               </ul>
             </div>
             <div id="plan-action-private-vault">
@@ -236,18 +283,18 @@
             </div>
           </article>
 
-          <!-- Vault + AI Plan -->
+          <!-- AI Pro Plan -->
           <article class="card plan-tier-card" id="card-plan-vault-ai">
             <div>
               <div class="plan-tier-header">
-                <span class="badge badge-premium">Vault + AI</span>
+                <span class="badge badge-premium">AI Pro</span>
                 <div class="plan-tier-price">₹150 <span class="muted" style="font-size:0.9rem;font-weight:500">/ month</span></div>
-                <p class="muted">Encrypted storage plus local semantic search and AI assistance.</p>
+                <p class="muted">Encrypted storage plus local semantic search and on-device AI document Q&amp;A.</p>
               </div>
               <ul class="plan-feature-list">
                 <li><span>5 GB encrypted storage quota</span></li>
-                <li><span>Hybrid keyword and semantic search</span></li>
-                <li><span>Local Gemma AI document Q&amp;A</span></li>
+                <li><span>Keyword and semantic search</span></li>
+                <li><span>Local AI document Q&amp;A</span></li>
                 <li><span>100 local AI queries / day</span></li>
               </ul>
             </div>
@@ -295,8 +342,9 @@
               <tr>
                 <th scope="col">Capability</th>
                 <th scope="col" style="text-align:center">Free</th>
-                <th scope="col" style="text-align:center">Private Vault</th>
-                <th scope="col" style="text-align:center">Vault + AI</th>
+                <th scope="col" style="text-align:center">Premium</th>
+                <th scope="col" style="text-align:center">AI Pro</th>
+                <th scope="col" style="text-align:center">Pay as you go</th>
               </tr>
             </thead>
             <tbody>
@@ -305,42 +353,49 @@
                 <td style="text-align:center">1 GB</td>
                 <td style="text-align:center">5 GB</td>
                 <td style="text-align:center;color:var(--cq-emerald)">5 GB</td>
+                <td style="text-align:center">Unlimited</td>
               </tr>
               <tr>
                 <th scope="row" style="color:var(--cq-text);font-weight:600">Encrypted file storage</th>
                 <td style="text-align:center">Included (AES-GCM)</td>
                 <td style="text-align:center">Included (AES-GCM)</td>
                 <td style="text-align:center;color:var(--cq-emerald)">Included (AES-GCM)</td>
+                <td style="text-align:center">Included (AES-GCM)</td>
               </tr>
               <tr>
                 <th scope="row" style="color:var(--cq-text);font-weight:600">Keyword search</th>
                 <td style="text-align:center">Included (FTS5)</td>
                 <td style="text-align:center">Included (FTS5)</td>
                 <td style="text-align:center;color:var(--cq-emerald)">Included (FTS5)</td>
+                <td style="text-align:center">Included (FTS5)</td>
               </tr>
               <tr>
                 <th scope="row" style="color:var(--cq-text);font-weight:600">Semantic vector search</th>
                 <td style="text-align:center" class="muted">Not included</td>
                 <td style="text-align:center" class="muted">Not included</td>
                 <td style="text-align:center;color:var(--cq-emerald)">Included (Local embeddings)</td>
+                <td style="text-align:center">Included (Local embeddings)</td>
               </tr>
               <tr>
                 <th scope="row" style="color:var(--cq-text);font-weight:600">Local AI Q&amp;A</th>
                 <td style="text-align:center" class="muted">Not included</td>
                 <td style="text-align:center" class="muted">Not included</td>
                 <td style="text-align:center;color:var(--cq-emerald)">Included (Local Gemma)</td>
+                <td style="text-align:center">Included (Local Gemma)</td>
               </tr>
               <tr>
                 <th scope="row" style="color:var(--cq-text);font-weight:600">Daily query allowance</th>
                 <td style="text-align:center" class="muted">0 queries / day</td>
                 <td style="text-align:center" class="muted">0 queries / day</td>
                 <td style="text-align:center;color:var(--cq-emerald)">100 queries / day</td>
+                <td style="text-align:center">Subject to limits</td>
               </tr>
               <tr>
-                <th scope="row" style="color:var(--cq-text);font-weight:600">Billing model</th>
+                <th scope="row" style="color:var(--cq-text);font-weight:600">Price</th>
                 <td style="text-align:center">₹0</td>
-                <td style="text-align:center">₹100 / month</td>
-                <td style="text-align:center;color:var(--cq-emerald)">₹150 / month</td>
+                <td style="text-align:center">₹100/month</td>
+                <td style="text-align:center;color:var(--cq-emerald)">₹150/month</td>
+                <td style="text-align:center">Coming soon</td>
               </tr>
             </tbody>
           </table>
