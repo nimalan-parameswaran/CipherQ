@@ -3,6 +3,7 @@ import { api } from "./api.js";
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[char]));
+const isAiPlan = (plan) => ["VAULT_AI", "PREMIUM", "CREATOR"].includes(plan);
 
 function applyTheme(theme) {
   const selected = theme === "dark" ? "dark" : "light";
@@ -310,14 +311,14 @@ async function initDashboard(user) {
   // AI Capability Metric
   const ai = document.getElementById("ai-status-text");
   if (ai) {
-    ai.textContent = user.plan_type !== "FREE"
+    ai.textContent = isAiPlan(user.plan_type)
       ? "Semantic Vector Search"
       : "Keyword Search included";
   }
 
   const aiAllowance = document.getElementById("ai-allowance-meta");
   if (aiAllowance) {
-    aiAllowance.textContent = user.plan_type !== "FREE"
+    aiAllowance.textContent = isAiPlan(user.plan_type)
       ? (usage ? `${usage.ai_queries_today} / ${usage.ai_daily_limit} queries today` : "100 queries / day")
       : "FTS5 Keyword Search (Local)";
   }
@@ -626,7 +627,7 @@ async function initAIChat(user) {
 
   const usage = await api.getUsage().catch(() => null);
 
-  if (user.plan_type !== "FREE") {
+  if (isAiPlan(user.plan_type)) {
     if (statusText) statusText.textContent = `${user.plan_type}: Hybrid Semantic Vector + Local Gemma Pipeline Active`;
     if (quotaText && usage) quotaText.textContent = `${usage.ai_queries_today} / ${usage.ai_daily_limit} queries today`;
   } else {
@@ -857,7 +858,7 @@ async function initAccount(user) {
     if (freeAction) {
       freeAction.innerHTML = '<button class="btn btn-outline" style="width:100%" disabled>Active plan</button>';
     }
-  } else if (user.plan_type !== "FREE") {
+  } else if (user.plan_type === "PRIVATE_VAULT" || user.plan_type === "VAULT_AI" || user.plan_type === "PREMIUM" || user.plan_type === "CREATOR") {
     const activeCardId = user.plan_type === "PRIVATE_VAULT" ? "card-plan-private-vault" : "card-plan-vault-ai";
     const activeActionId = user.plan_type === "PRIVATE_VAULT" ? "plan-action-private-vault" : "plan-action-vault-ai";
     const activeCard = document.getElementById(activeCardId);
