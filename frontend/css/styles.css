@@ -1155,6 +1155,23 @@ body.workspace-body {
   display: flex;
   align-items: center;
   gap: 6px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.citations-title::-webkit-details-marker {
+  display: none;
+}
+
+.citations-title::after {
+  content: "+";
+  margin-left: auto;
+  font-size: 1rem;
+  font-weight: 400;
+}
+
+.citations-container[open] .citations-title::after {
+  content: "−";
 }
 
 .citation-card {

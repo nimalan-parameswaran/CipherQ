@@ -214,6 +214,15 @@ class SearchService:
         )
         return any(re.search(pattern, normalized) for pattern in patterns)
 
+    @staticmethod
+    def _needs_author_answer(query: str) -> bool:
+        normalized = re.sub(r"[^a-z0-9\s]", " ", query.casefold())
+        normalized = " ".join(normalized.split())
+        return bool(re.search(
+            r"\b(author|written by|who wrote|who is the writer)\b",
+            normalized,
+        ))
+
     async def search_first_page(
         self,
         db: AsyncSession,
@@ -275,6 +284,11 @@ class SearchService:
             if self._needs_first_page(query)
             else []
         )
+
+        # Title/author questions are answered from title pages only. General
+        # FTS/semantic matches contain false positives such as "authorising".
+        if first_page_hits and self._needs_author_answer(query):
+            return first_page_hits
 
         if plan_type != "PREMIUM":
             normal_hits = await self.search_fts5(
@@ -344,6 +358,32 @@ class SearchService:
             for token in re.findall(r"\w+", query)
             if len(token) > 2
         }
+
+        if self._needs_author_answer(query):
+            author_matches = []
+            for hit in hits:
+                match = re.search(
+                    r"\b(?:by|written\s+by)\s+"
+                    r"([A-Z][A-Za-z.'-]*(?:[ \t]+[A-Z][A-Za-z.'-]*){0,4})",
+                    hit.content,
+                    flags=re.IGNORECASE,
+                )
+                if match:
+                    author_matches.append(match.group(1).strip(" .,:;"))
+            if author_matches:
+                author = author_matches[0]
+                return {
+                    "answer": f"The author is {author}.",
+                    "citations": [{
+                        "filename": hit.filename,
+                        "page_number": hit.page_number,
+                        "chunk_index": hit.chunk_index,
+                        "snippet": re.sub(r"</?b>", "", hit.snippet),
+                        "score": hit.score,
+                        "match_type": hit.match_type,
+                    } for hit in hits[:1]],
+                    "has_sufficient_evidence": True,
+                }
 
         for hit in hits:
             # Clean HTML tags in snippet

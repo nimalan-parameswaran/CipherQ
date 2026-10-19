@@ -718,8 +718,7 @@ async function initAIChat(user) {
 
       answerMsg.innerHTML = `
         <div class="message-header">
-          <span class="message-label">CipherQ local assistant</span>
-          <span class="badge badge-meta">${escapeHtml(result.mode_used || "LOCAL")}</span>
+          <span class="message-label">CipherQ</span>
         </div>
         <div class="message-content">${escapeHtml(result.answer).replace(/\n/g, "<br>")}</div>
         ${evidenceWarning}

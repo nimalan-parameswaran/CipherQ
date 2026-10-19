@@ -5,7 +5,7 @@ Telemetry and outbound network requests are strictly disabled.
 Supports local ONNX models when available, with a deterministic local feature hashing vectorizer fallback.
 """
 import os
-import struct
+import hashlib
 from pathlib import Path
 from typing import List, Union
 import numpy as np
@@ -58,14 +58,23 @@ class LocalEmbeddingEngine:
 
         for word in words:
             # Word-level hash
-            h = hash(word) % self.dimensions
+            h = int.from_bytes(
+                hashlib.blake2b(word.encode("utf-8"), digest_size=8).digest(),
+                "little",
+            ) % self.dimensions
             vec[h] += 1.0
 
             # Character 3-gram and 4-gram subwords for morphological matching
             if len(word) >= 3:
                 for i in range(len(word) - 2):
                     sub = word[i:i+3]
-                    h_sub = (hash(sub) ^ 0x5bd1e995) % self.dimensions
+                    h_sub = int.from_bytes(
+                        hashlib.blake2b(
+                            f"3:{sub}".encode("utf-8"),
+                            digest_size=8,
+                        ).digest(),
+                        "little",
+                    ) % self.dimensions
                     vec[h_sub] += 0.5
 
         # L2-normalization to produce unit vector for fast cosine similarity via dot product
