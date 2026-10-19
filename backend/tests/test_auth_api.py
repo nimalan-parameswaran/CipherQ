@@ -145,6 +145,7 @@ async def test_cross_origin_login_issues_browser_compatible_cookie(client: Async
     cookie_header = login_res.headers["set-cookie"].lower()
     assert "samesite=none" in cookie_header
     assert "secure" in cookie_header
+    assert "partitioned" in cookie_header
 
 
 @pytest.mark.asyncio

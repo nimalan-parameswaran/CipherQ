@@ -98,12 +98,13 @@ COOKIE_SAMESITE=none
 ```
 
 CORS compares origins, not the `/CipherQ/` path. The login endpoint also
-upgrades the cookie to `Secure; SameSite=None` when the request comes from an
-explicitly allowed external frontend origin, so a stale local cookie
-configuration cannot make a successful login immediately appear unauthenticated
-on GitHub Pages. The environment values above remain the recommended explicit
-production configuration and are required for clients that do not send an
-approved browser `Origin` header.
+upgrades the cookie to `Secure; SameSite=None; Partitioned` when the request
+comes from an explicitly allowed external frontend origin. `Partitioned`
+(CHIPS) keeps the session available to browsers that block unpartitioned
+third-party cookies, so a successful login does not immediately appear
+unauthenticated on GitHub Pages. The environment values above remain the
+recommended explicit production configuration and are required for clients
+that do not send an approved browser `Origin` header.
 
 ## Production security checklist
 

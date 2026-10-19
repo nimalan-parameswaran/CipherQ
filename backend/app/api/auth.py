@@ -40,7 +40,7 @@ def get_client_ip(request: Request) -> str:
     return "127.0.0.1"
 
 
-def get_session_cookie_options(request: Request) -> tuple[str, bool]:
+def get_session_cookie_options(request: Request) -> tuple[str, bool, bool]:
     """
     Return cookie attributes appropriate for the current browser request.
 
@@ -51,6 +51,7 @@ def get_session_cookie_options(request: Request) -> tuple[str, bool]:
     """
     same_site = settings.COOKIE_SAMESITE
     secure = settings.COOKIE_SECURE
+    partitioned = False
     origin = request.headers.get("origin", "").rstrip("/")
     request_origin = str(request.base_url).rstrip("/")
 
@@ -62,8 +63,9 @@ def get_session_cookie_options(request: Request) -> tuple[str, bool]:
     if origin in allowed_origins and origin != request_origin:
         same_site = "none"
         secure = True
+        partitioned = True
 
-    return same_site, secure
+    return same_site, secure, partitioned
 
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
@@ -174,7 +176,7 @@ async def login_user(
     db.add(session_record)
     await db.commit()
 
-    cookie_samesite, cookie_secure = get_session_cookie_options(request)
+    cookie_samesite, cookie_secure, cookie_partitioned = get_session_cookie_options(request)
 
     # Set secure HttpOnly cookie
     response.set_cookie(
@@ -184,6 +186,7 @@ async def login_user(
         httponly=True,
         samesite=cookie_samesite,
         secure=cookie_secure,
+        partitioned=cookie_partitioned,
         path="/"
     )
 
@@ -196,6 +199,7 @@ async def login_user(
 
 @router.post("/logout", response_model=MessageResponse)
 async def logout_user(
+    request: Request,
     response: Response,
     session_and_user=Depends(get_current_session_and_user),
     _csrf=Depends(verify_csrf),
@@ -206,9 +210,13 @@ async def logout_user(
     await db.delete(session_obj)
     await db.commit()
 
+    cookie_samesite, cookie_secure, cookie_partitioned = get_session_cookie_options(request)
     response.delete_cookie(
         key=settings.SESSION_COOKIE_NAME,
-        path="/"
+        path="/",
+        samesite=cookie_samesite,
+        secure=cookie_secure,
+        partitioned=cookie_partitioned
     )
 
     return MessageResponse(message="Successfully logged out.")
