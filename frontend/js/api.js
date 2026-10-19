@@ -79,6 +79,7 @@ class CipherQAPIClient {
   _fetchOptions(extra = {}) {
     return {
       credentials: this._crossOrigin ? "include" : "same-origin",
+      cache: "no-store",
       ...extra,
     };
   }
@@ -131,7 +132,22 @@ class CipherQAPIClient {
     }
     const data = await res.json();
     this.setCSRFToken(data.csrf_token);
-    return data;
+
+    // Confirm the browser accepted the Set-Cookie response before navigating
+    // away from the public page. This prevents a false successful login.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      const session = await this.getMe();
+      if (session) return data;
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+      }
+    }
+
+    this.setCSRFToken(null);
+    throw new Error(
+      "Login succeeded, but the browser did not retain the session cookie. " +
+      "The API must use HTTPS with credentialed CORS and a SameSite=None; Secure; Partitioned cookie."
+    );
   }
 
   async logout() {
@@ -166,6 +182,9 @@ class CipherQAPIClient {
       }
       return data;
     } catch (e) {
+      if (e instanceof Error && e.message.startsWith("The CipherQ backend returned HTTP")) {
+        throw e;
+      }
       throw new Error(
         "The CipherQ backend could not be reached. Check the HTTPS API URL and tunnel status."
       );

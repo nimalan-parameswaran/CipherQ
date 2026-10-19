@@ -840,7 +840,15 @@ async function initApp() {
   ensureAuthModal();
   let user;
   try {
-    user = await api.getMe();
+    // Allow the browser a brief interval to expose a newly-issued
+    // cross-origin cookie after a full-page navigation.
+    for (let attempt = 0; attempt < 3; attempt += 1) {
+      user = await api.getMe();
+      if (user) break;
+      if (attempt < 2) {
+        await new Promise((resolve) => setTimeout(resolve, 200 * (attempt + 1)));
+      }
+    }
   } catch (error) {
     const main = document.querySelector("main");
     if (main) {

@@ -190,6 +190,7 @@ async def test_authenticated_me_and_session_expiry(client: AsyncClient, test_db_
     me_res = await client.get("/api/v1/auth/me")
     assert me_res.status_code == 200
     assert me_res.json()["email"] == email
+    assert me_res.headers["cache-control"] == "no-store"
 
     # Access /me without cookie -> 401
     client.cookies.clear()
