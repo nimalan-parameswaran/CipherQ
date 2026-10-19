@@ -156,6 +156,14 @@
       <!-- Chat Input Form -->
       <form id="ai-chat-form" class="chat-form">
         <label class="sr-only" for="ai-chat-input">Question</label>
+
+        <div class="chat-mode-selector" style="display:flex; gap:8px; margin-bottom:12px; overflow-x:auto; padding-bottom:4px;">
+          <button type="button" class="filter-pill active" data-mode="general">General</button>
+          <button type="button" class="filter-pill" data-mode="summarize">Summarize</button>
+          <button type="button" class="filter-pill" data-mode="extract">Extract</button>
+          <button type="button" class="filter-pill" data-mode="analyze">Analyze</button>
+        </div>
+
         <textarea
           id="ai-chat-input"
           class="form-control"

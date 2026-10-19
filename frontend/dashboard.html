@@ -158,9 +158,12 @@
               <line x1="12" y1="3" x2="12" y2="15"></line>
             </svg>
           </div>
-          <div class="metric-value" id="storage-text">Loading…</div>
-          <div class="progress" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100">
-            <span id="storage-meter-fill" style="width:0%"></span>
+          <div class="metric-gauge-container">
+            <svg class="metric-gauge-svg" viewBox="0 0 36 36">
+              <circle class="metric-gauge-track" cx="18" cy="18" r="16"></circle>
+              <circle id="storage-gauge-fill" class="metric-gauge-fill" cx="18" cy="18" r="16" stroke-dasharray="100.5" stroke-dashoffset="100.5"></circle>
+            </svg>
+            <div class="metric-gauge-text" id="storage-text">0%</div>
           </div>
           <div class="metric-meta" id="storage-detail">AES-256-GCM encrypted quota</div>
         </article>
@@ -187,7 +190,13 @@
               <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
             </svg>
           </div>
-          <div class="metric-value" id="ai-status-text">Loading…</div>
+          <div class="metric-gauge-container">
+            <svg class="metric-gauge-svg" viewBox="0 0 36 36">
+              <circle class="metric-gauge-track" cx="18" cy="18" r="16"></circle>
+              <circle id="ai-gauge-fill" class="metric-gauge-fill" cx="18" cy="18" r="16" stroke-dasharray="100.5" stroke-dashoffset="100.5"></circle>
+            </svg>
+            <div class="metric-gauge-text" id="ai-status-text">0%</div>
+          </div>
           <div class="metric-meta" id="ai-allowance-meta">Checking query allowance…</div>
         </article>
 
@@ -218,7 +227,7 @@
           </a>
         </div>
         <div class="table-wrap">
-          <table>
+          <table id="recent-files-table">
             <thead>
               <tr>
                 <th scope="col">File</th>
@@ -236,6 +245,14 @@
           </table>
         </div>
       </section>
+
+      <button class="fab-upload" id="fab-upload" title="Upload new file">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+          <polyline points="17 8 12 3 7 8"></polyline>
+          <line x1="12" y1="3" x2="12" y2="15"></line>
+        </svg>
+      </button>
 
       <!-- Feature Highlight Cards -->
       <section class="workspace-section grid grid-2">
