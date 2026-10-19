@@ -1167,6 +1167,7 @@ body[data-theme="dark"]:not(.workspace-body) .price-card-muted {
   border-radius: var(--cq-radius);
   background: var(--cq-surface);
   line-height: 1.6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
 }
 
 .workspace-body .message.assistant {
@@ -1204,6 +1205,12 @@ body[data-theme="dark"]:not(.workspace-body) .price-card-muted {
 .message-content {
   font-size: 0.9rem;
   word-break: break-word;
+  white-space: normal;
+}
+
+.workspace-body .message.assistant .message-content {
+  font-size: 0.95rem;
+  letter-spacing: -0.005em;
 }
 
 .message-evidence-alert {

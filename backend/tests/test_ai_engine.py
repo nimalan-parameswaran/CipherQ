@@ -46,6 +46,24 @@ async def test_greeting_uses_conversation_path_without_retrieval(client: AsyncCl
 
 
 @pytest.mark.asyncio
+async def test_hello_is_conversational(client: AsyncClient):
+    await client.post("/api/v1/auth/register", json={
+        "email": "hello_user@example.com",
+        "password": "Password2026!",
+        "plan_type": "FREE"
+    })
+    await client.post("/api/v1/auth/login", json={
+        "email": "hello_user@example.com",
+        "password": "Password2026!"
+    })
+    response = await client.post("/api/v1/ai/query", json={"query": "hello"})
+
+    assert response.status_code == 200
+    assert response.json()["response_kind"] == "CONVERSATION"
+    assert response.json()["citations"] == []
+
+
+@pytest.mark.asyncio
 async def test_on_demand_indexing_lifecycle(client: AsyncClient, test_db_session: AsyncSession):
     """Verify documents are not automatically indexed upon upload, and indexing is strictly on-demand."""
     # 1. Register and login

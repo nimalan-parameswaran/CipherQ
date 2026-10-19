@@ -234,7 +234,7 @@ class EntitlementService:
         """Enforces tier-specific feature restrictions."""
         if feature == "SEMANTIC_SEARCH" and user.plan_type.upper() not in {"VAULT_AI", "PREMIUM", "CREATOR"}:
             raise PlanPermissionError(
-                "Semantic vector search and local embeddings require the Vault + AI plan."
+                "Semantic vector search and local embeddings require the Vault + AI plan (Premium capability)."
             )
 
 

@@ -4,6 +4,7 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => 
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[char]));
 const isAiPlan = (plan) => ["VAULT_AI", "PREMIUM", "CREATOR"].includes(plan);
+const isGreeting = (query) => /^(hi|hello|hey|hiya|good morning|good afternoon|good evening|how are you)[!.?,\s]*$/i.test(query.trim());
 
 function applyTheme(theme) {
   const selected = theme === "dark" ? "dark" : "light";
@@ -630,6 +631,11 @@ async function initAIChat(user) {
   if (isAiPlan(user.plan_type)) {
     if (statusText) statusText.textContent = `${user.plan_type}: Hybrid Semantic Vector + Local Gemma Pipeline Active`;
     if (quotaText && usage) quotaText.textContent = `${usage.ai_queries_today} / ${usage.ai_daily_limit} queries today`;
+  } else if (user.plan_type === "PRIVATE_VAULT") {
+    document.getElementById("ai-plan-notice")?.classList.remove("sr-only");
+    if (statusText) statusText.textContent = "Private Vault: SQLite FTS5 Keyword Search";
+    if (quotaText) quotaText.textContent = "AI assistant available on Vault + AI";
+    if (statusDot) statusDot.classList.add("warning");
   } else {
     document.getElementById("ai-plan-notice")?.classList.remove("sr-only");
     if (statusText) statusText.textContent = "Free Tier: SQLite FTS5 Keyword Search (Local Retrieval)";
@@ -726,14 +732,15 @@ async function initAIChat(user) {
     // Loading Assistant Message
     const loading = document.createElement("div");
     loading.className = "message assistant";
+    const conversationalQuery = isGreeting(query);
     loading.innerHTML = `
       <div class="message-header">
-        <span class="message-label">CipherQ local assistant</span>
-        <span class="badge badge-meta">PROCESSING</span>
+        <span class="message-label">CipherQ</span>
+        <span class="badge badge-meta">${conversationalQuery ? "RESPONDING" : "SEARCHING YOUR VAULT"}</span>
       </div>
       <div class="muted" style="display:flex;align-items:center">
         <span class="spinner-dots"><span></span><span></span><span></span></span>
-        <span>Searching local index and synthesizing answer…</span>
+        <span>${conversationalQuery ? "Preparing a response…" : "Retrieving relevant evidence…"}</span>
       </div>`;
     history.appendChild(loading);
     history.scrollTop = history.scrollHeight;
@@ -769,8 +776,9 @@ async function initAIChat(user) {
           </details>`;
       }
 
+      const conversationResponse = result.response_kind === "CONVERSATION" || conversationalQuery;
       const evidenceWarning = result.has_sufficient_evidence
-        || result.response_kind === "CONVERSATION"
+        || conversationResponse
         ? ""
         : `<div class="message-evidence-alert alert-warning">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -780,6 +788,7 @@ async function initAIChat(user) {
       answerMsg.innerHTML = `
         <div class="message-header">
           <span class="message-label">CipherQ</span>
+          <span class="badge badge-meta">${conversationResponse ? "CONVERSATION" : "GROUNDED ANSWER"}</span>
         </div>
         <div class="message-content">${escapeHtml(result.answer).replace(/\n/g, "<br>")}</div>
         ${evidenceWarning}

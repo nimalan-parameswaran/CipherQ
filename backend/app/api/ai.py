@@ -230,7 +230,7 @@ async def query_vault_documents(
             if current_user.plan_type not in {"VAULT_AI", "PREMIUM", "CREATOR"}:
                 raise HTTPException(
                     status_code=status.HTTP_403_FORBIDDEN,
-                    detail="Semantic vector search requires the Vault + AI plan."
+                    detail="Semantic vector search requires the Vault + AI plan (Premium capability)."
                 )
             hits = await search_service.search_semantic(
                 db=db,
@@ -310,7 +310,7 @@ async def query_semantic_exclusive(
     if current_user.plan_type not in {"VAULT_AI", "PREMIUM", "CREATOR"}:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Semantic vector search requires the Vault + AI plan."
+            detail="Semantic vector search requires the Vault + AI plan (Premium capability)."
         )
     payload.mode = "semantic"
     return await query_vault_documents(payload, current_user, db)

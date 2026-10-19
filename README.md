@@ -118,15 +118,16 @@ flowchart TD
 ### 4. Authoritative Plan Entitlements
 - **Authoritative Decimal Byte Quotas**:
   - `FREE`: **1 GB** (`1,000,000,000` bytes)
-  - `PREMIUM`: **5 GB** (`5,000,000,000` bytes)
-  - `CREATOR`: **25 GB** (`25,000,000,000` bytes), hybrid semantic search, and 500 local AI queries/day
+  - `PRIVATE_VAULT`: **5 GB** (`5,000,000,000` bytes), encrypted vault and keyword search
+  - `VAULT_AI`: **5 GB** (`5,000,000,000` bytes), semantic search and 100 local AI queries/day
+  - `PREMIUM` and `CREATOR` remain accepted as legacy account values and resolve to the AI-enabled capability set.
 - **Concurrency-Safe In-Flight Tracking**: `InFlightQuotaTracker` reserves space during uploads to prevent concurrent upload races from exceeding storage limits.
 - **Atomic Commit-Time Re-Check**: Final database transactions re-verify aggregate storage at commit time to prevent race conditions.
 - **Durable Startup Reconciliation**: Recalculates exact physical vault ciphertext usage on server boot, eliminating negative or stale usage counts.
 - **Global Host Storage Safety Limit**: Enforces a 1 GB host safety reserve rejecting uploads with `HTTP 507 Insufficient Storage` when device headroom drops below the safety margin.
 - **Admin Management & Audit Logging**: Protected admin API (`X-Admin-Token`) and CLI tool for plan upgrades and downgrades, with immutable audit event logging.
 
-### 5. On-Demand Dual-Tier Grounded Extractive AI
+### 5. On-Demand Grounded Extractive AI
 - **Strictly Local Computation**: Zero external cloud AI calls. Document contents never leave the Arduino.
 - **Dual-Tier Search Architecture**:
   - *Tier 1 (Instant Baseline)*: SQLite FTS5 full-text keyword search (< 5 ms latency).
