@@ -64,6 +64,28 @@ async def test_hello_is_conversational(client: AsyncClient):
 
 
 @pytest.mark.asyncio
+async def test_casual_and_general_topics_do_not_retrieve_document_excerpts(client: AsyncClient):
+    await client.post("/api/v1/auth/register", json={
+        "email": "casual_user@example.com",
+        "password": "Password2026!",
+        "plan_type": "FREE"
+    })
+    await client.post("/api/v1/auth/login", json={
+        "email": "casual_user@example.com",
+        "password": "Password2026!"
+    })
+
+    how_are_you = await client.post("/api/v1/ai/query", json={"query": "hwo are you"})
+    general = await client.post("/api/v1/ai/query", json={"query": "tell me about football"})
+
+    assert how_are_you.json()["response_kind"] == "CONVERSATION"
+    assert "ready to help" in how_are_you.json()["answer"].lower()
+    assert general.json()["response_kind"] == "OUT_OF_SCOPE"
+    assert general.json()["citations"] == []
+    assert "indexed vault" in general.json()["answer"].lower()
+
+
+@pytest.mark.asyncio
 async def test_on_demand_indexing_lifecycle(client: AsyncClient, test_db_session: AsyncSession):
     """Verify documents are not automatically indexed upon upload, and indexing is strictly on-demand."""
     # 1. Register and login

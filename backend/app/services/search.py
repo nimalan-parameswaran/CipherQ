@@ -68,13 +68,36 @@ def sanitize_fts5_query(raw_query: str) -> str:
     return " OR ".join(fts_tokens)
 
 
-def is_conversational_greeting(query: str) -> bool:
-    """Recognize short greetings that should not trigger document retrieval."""
+def conversational_response(query: str) -> Optional[str]:
+    """Return a safe local response for casual chat before document retrieval."""
     normalized = re.sub(r"[^a-z\s]", "", query.casefold()).strip()
-    return normalized in {
-        "hi", "hello", "hey", "hiya", "good morning",
-        "good afternoon", "good evening", "how are you",
-    }
+    if normalized in {"hi", "hello", "hey", "hiya", "good morning", "good afternoon", "good evening"}:
+        return "Hi! I’m CipherQ. I’m ready to help you explore your indexed documents."
+    if normalized in {"how are you", "hwo are you", "how r you", "how are u"}:
+        return "I’m doing well and ready to help. Ask me about a document in your private vault, and I’ll look for grounded evidence."
+    if normalized in {"who are you", "what are you"}:
+        return "I’m CipherQ, your private document assistant. I search your authorized indexed files and answer with evidence from your vault."
+    if normalized in {"what can you do", "help", "how can you help"}:
+        return "I can search indexed vault documents, answer questions from their contents, summarize evidence, and show the sources I used."
+    if normalized in {"thanks", "thank you", "thx"}:
+        return "You’re welcome. Whenever you’re ready, ask me something about your indexed documents."
+    return None
+
+
+def is_conversational_greeting(query: str) -> bool:
+    """Recognize greetings that should not trigger document retrieval."""
+    return conversational_response(query) is not None
+
+
+def is_general_knowledge_request(query: str) -> bool:
+    """Detect requests that are not asking about the user's private documents."""
+    normalized = re.sub(r"\s+", " ", query.casefold()).strip()
+    return (
+        normalized.startswith(("tell me about ", "explain ", "write a ", "give me a joke"))
+        or normalized in {"what is the weather", "what is the latest news", "tell me a joke"}
+        or "latest news" in normalized
+        or "weather today" in normalized
+    )
 
 
 class SearchService:
@@ -353,12 +376,21 @@ class SearchService:
         If no relevant documents are found, returns an explicit insufficient evidence notice.
         Guarantees zero citation fabrication.
         """
-        if is_conversational_greeting(query):
+        casual_answer = conversational_response(query)
+        if casual_answer:
             return {
-                "answer": "Hi! I’m CipherQ. Ask me a question about your indexed documents and I’ll retrieve the relevant evidence for you.",
+                "answer": casual_answer,
                 "citations": [],
                 "has_sufficient_evidence": True,
                 "response_kind": "CONVERSATION",
+            }
+
+        if is_general_knowledge_request(query):
+            return {
+                "answer": "That topic is outside your indexed vault. Ask me a question about one of your documents, and I’ll answer from the available evidence.",
+                "citations": [],
+                "has_sufficient_evidence": True,
+                "response_kind": "OUT_OF_SCOPE",
             }
 
         if not hits:

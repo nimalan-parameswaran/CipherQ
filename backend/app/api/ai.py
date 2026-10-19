@@ -28,7 +28,10 @@ from backend.app.services.extractor import (
 )
 from backend.app.services.embedding import embedding_service
 from backend.app.services.search import search_service
-from backend.app.services.search import is_conversational_greeting
+from backend.app.services.search import (
+    conversational_response,
+    is_general_knowledge_request,
+)
 from backend.app.services.gemma import generate_grounded_answer
 
 router = APIRouter(prefix="/ai", tags=["Local AI"])
@@ -209,22 +212,32 @@ async def query_vault_documents(
         stmt_usage = select(UsageRecord).where(UsageRecord.user_id == current_user.id)
         usage = (await db.execute(stmt_usage)).scalar_one_or_none()
 
-        is_greeting = is_conversational_greeting(payload.query)
-        if usage and not is_greeting:
+        casual_answer = conversational_response(payload.query)
+        if usage and not casual_answer:
             usage.ai_queries_today += 1
             await db.commit()
 
         # Enforce tier-specific capability gating
         requested_mode = (payload.mode or "auto").strip().lower()
-        if is_greeting:
+        if casual_answer:
             return QueryAnswerResponse(
                 query=payload.query,
-                answer=search_service.synthesize_grounded_answer(payload.query, [])["answer"],
+                answer=casual_answer,
                 has_sufficient_evidence=True,
                 citations=[],
                 plan_tier=current_user.plan_type,
                 mode_used="CONVERSATION",
                 response_kind="CONVERSATION",
+            )
+        if is_general_knowledge_request(payload.query):
+            return QueryAnswerResponse(
+                query=payload.query,
+                answer="That topic is outside your indexed vault. Ask me a question about one of your documents, and I’ll answer from the available evidence.",
+                has_sufficient_evidence=True,
+                citations=[],
+                plan_tier=current_user.plan_type,
+                mode_used="OUT_OF_SCOPE",
+                response_kind="OUT_OF_SCOPE",
             )
         if requested_mode == "semantic":
             if current_user.plan_type not in {"VAULT_AI", "PREMIUM", "CREATOR"}:

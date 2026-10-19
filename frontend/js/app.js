@@ -752,6 +752,7 @@ async function initAIChat(user) {
       const answerMsg = document.createElement("div");
       answerMsg.className = "message assistant";
       const conversationResponse = result.response_kind === "CONVERSATION" || conversationalQuery;
+      const outOfScopeResponse = result.response_kind === "OUT_OF_SCOPE";
 
       // Keep greetings conversational even when an older backend deployment
       // returns the pre-conversation retrieval response contract.
@@ -787,6 +788,7 @@ async function initAIChat(user) {
 
       const evidenceWarning = result.has_sufficient_evidence
         || conversationResponse
+        || outOfScopeResponse
         ? ""
         : `<div class="message-evidence-alert alert-warning">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -796,7 +798,7 @@ async function initAIChat(user) {
       answerMsg.innerHTML = `
         <div class="message-header">
           <span class="message-label">CipherQ</span>
-          <span class="badge badge-meta">${conversationResponse ? "READY TO HELP" : "GROUNDED ANSWER"}</span>
+          <span class="badge badge-meta">${conversationResponse ? "READY TO HELP" : outOfScopeResponse ? "VAULT-FOCUSED" : "GROUNDED ANSWER"}</span>
         </div>
         <div class="message-content">${escapeHtml(result.answer).replace(/\n/g, "<br>")}</div>
         ${evidenceWarning}
