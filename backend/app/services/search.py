@@ -62,9 +62,10 @@ def sanitize_fts5_query(raw_query: str) -> str:
     if not tokens:
         return ""
 
-    # Wrap tokens in quotes and append wildcard for prefix matching: "token"*
+    # Match relevant terms independently. Requiring every natural-language
+    # question term made ordinary questions return no evidence.
     fts_tokens = [f'"{token}"*' for token in tokens]
-    return " ".join(fts_tokens)
+    return " OR ".join(fts_tokens)
 
 
 class SearchService:
@@ -135,7 +136,7 @@ class SearchService:
         user_id: str,
         query: str,
         limit: int = 5,
-        min_threshold: float = 0.50
+        min_threshold: float = 0.58
     ) -> List[SearchHit]:
         """
         Semantic vector search via cosine similarity across local 384-dimensional embeddings.
@@ -338,10 +339,28 @@ class SearchService:
 
         citations = []
         evidence_points = []
+        query_terms = {
+            token.casefold()
+            for token in re.findall(r"\w+", query)
+            if len(token) > 2
+        }
 
         for hit in hits:
             # Clean HTML tags in snippet
             clean_snippet = re.sub(r'</?b>', '', hit.snippet)
+            sentences = re.split(r"(?<=[.!?])\s+", re.sub(r"\s+", " ", hit.content).strip())
+            ranked_sentences = sorted(
+                sentences,
+                key=lambda sentence: len(
+                    query_terms.intersection(
+                        token.casefold() for token in re.findall(r"\w+", sentence)
+                    )
+                ),
+                reverse=True,
+            )
+            answer_excerpt = (ranked_sentences[0] if ranked_sentences else clean_snippet).strip()
+            if len(answer_excerpt) > 320:
+                answer_excerpt = answer_excerpt[:317].rsplit(" ", 1)[0] + "..."
             citations.append({
                 "filename": hit.filename,
                 "page_number": hit.page_number,
@@ -352,14 +371,16 @@ class SearchService:
             })
 
             evidence_points.append(
-                f"- **{hit.filename}** (Page {hit.page_number}): \"{clean_snippet}\""
+                f"- {answer_excerpt}"
             )
 
         # Construct grounded response
         answer_lines = [
-            f"Based on evidence retrieved directly from your private vault documents for query *\"{query}\"*:\n",
-            "\n".join(evidence_points),
-            f"\n\n*All references cited above originate from authenticated local vault documents.*"
+            "I found the following relevant information in your indexed documents:",
+            "\n".join(
+                f"{index}. {point.removeprefix('- ')}"
+                for index, point in enumerate(evidence_points, start=1)
+            ),
         ]
 
         return {

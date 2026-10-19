@@ -688,14 +688,14 @@ async function initAIChat(user) {
       let citationsHtml = "";
       if (result.citations && result.citations.length > 0) {
         citationsHtml = `
-          <div class="citations-container">
-            <div class="citations-title">
+          <details class="citations-container">
+            <summary class="citations-title">
               <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
                 <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
               </svg>
-              <span>Retrieved Sources (${result.citations.length})</span>
-            </div>
+              <span>Sources (${result.citations.length})</span>
+            </summary>
             <div class="citations-list">
               ${result.citations.map((c) => `
                 <div class="citation-card">
@@ -706,7 +706,7 @@ async function initAIChat(user) {
                   <div class="citation-snippet">${escapeHtml(c.snippet)}</div>
                 </div>`).join("")}
             </div>
-          </div>`;
+          </details>`;
       }
 
       const evidenceWarning = result.has_sufficient_evidence

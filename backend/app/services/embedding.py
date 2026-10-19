@@ -89,8 +89,11 @@ class LocalEmbeddingEngine:
 
     def compute_similarity(self, vec_a: np.ndarray, vec_b: np.ndarray) -> float:
         """Computes cosine similarity between two unit vectors."""
-        dot = float(np.dot(vec_a, vec_b))
-        return max(0.0, min(1.0, (dot + 1.0) / 2.0))  # Normalize [-1, 1] to [0, 1]
+        norm_a = float(np.linalg.norm(vec_a))
+        norm_b = float(np.linalg.norm(vec_b))
+        if norm_a <= 1e-8 or norm_b <= 1e-8:
+            return 0.0
+        return max(0.0, min(1.0, float(np.dot(vec_a, vec_b) / (norm_a * norm_b))))
 
 
 embedding_service = LocalEmbeddingEngine()
