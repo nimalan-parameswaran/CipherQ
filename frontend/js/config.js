@@ -41,6 +41,7 @@ window.PLANS_CONFIG = {
     storage: '5 GB',
     aiLimit: '100 local AI queries / day',
     features: [
+      '5 GB storage quota',
       'Encrypted file vault',
       'Keyword and semantic search',
       'Local AI document Q&A',
