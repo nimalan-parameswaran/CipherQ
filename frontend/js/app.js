@@ -1,5 +1,12 @@
 import { api } from "./api.js";
 
+const MODE_TEMPLATES = {
+  general: "",
+  summarize: "Please provide a concise summary of the following query, focusing on the key takeaways and main points: ",
+  extract: "Please extract the specific facts, data points, or requirements from the following query as a structured list: ",
+  analyze: "Please perform a detailed analysis of the following query, exploring the implications and providing a reasoned conclusion: ",
+};
+
 const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[char]));
@@ -186,6 +193,60 @@ export function openAuthModal(mode = "login") {
   document.getElementById("auth-modal").style.display = "flex";
 }
 
+function updatePricingUI() {
+  if (!window.PLANS_CONFIG) return;
+
+  document.querySelectorAll(".price-card").forEach((card) => {
+    const planId = card.dataset.planId;
+    const plan = window.PLANS_CONFIG[planId];
+    if (!plan) return;
+
+    // Update Price and Period
+    const priceEl = card.querySelector(".price");
+    if (priceEl) {
+      priceEl.innerHTML = `${plan.price} <span class="muted price-period">${plan.period}</span>`;
+    }
+
+    // Update Badge
+    const badge = card.querySelector(".badge");
+    if (badge) {
+      badge.textContent = plan.name;
+      badge.className = `badge ${plan.badgeClass}`;
+    }
+
+    // Update Feature List
+    const list = card.querySelector("ul");
+    if (list) {
+      list.innerHTML = plan.features.map(f => `<li>${f}</li>`).join("");
+    }
+
+    // Handle Coming Soon / Disabled state
+    const btn = card.querySelector("button");
+    if (btn && plan.isComingSoon) {
+      btn.disabled = true;
+      btn.textContent = "Coming soon";
+      card.classList.add("price-card-muted");
+    }
+  });
+}
+
+function updateUsageMetrics(user, usage) {
+  if (!user || !usage) return;
+
+  // Storage in Account page
+  const storageMeta = document.getElementById("account-storage-meta");
+  if (storageMeta) {
+    const pct = Math.round((usage.storage_bytes_used / usage.storage_quota_bytes) * 100);
+    storageMeta.textContent = `${formatBytes(usage.storage_bytes_used)} used (${pct}%)`;
+  }
+
+  // AI Limit in Account page
+  const aiLimit = document.getElementById("account-ai-limit");
+  if (aiLimit) {
+    aiLimit.textContent = `${usage.ai_daily_limit} queries/day`;
+  }
+}
+
 function updateNavbar(user) {
   // Sync all user displays and plan badges on the page
   const userDisplays = document.querySelectorAll("#user-display");
@@ -280,12 +341,14 @@ async function initDashboard(user) {
   const name = document.getElementById("user-badge");
   if (name) name.textContent = user.email;
 
-  // Storage Metric
-  const meter = document.getElementById("storage-meter-fill");
-  if (meter) meter.style.width = `${percentage}%`;
-
-  const text = document.getElementById("storage-text");
-  if (text) text.textContent = `${formatBytes(used)} of ${formatBytes(quota)} used (${percentage}%)`;
+  // Storage Metric Gauge
+  const storageFill = document.getElementById("storage-gauge-fill");
+  const storageText = document.getElementById("storage-text");
+  if (storageFill) {
+    const offset = 100.5 - (percentage / 100) * 100.5;
+    storageFill.style.strokeDashoffset = offset;
+  }
+  if (storageText) storageText.textContent = `${percentage}%`;
 
   const storageDetail = document.getElementById("storage-detail");
   if (storageDetail) {
@@ -296,12 +359,20 @@ async function initDashboard(user) {
   const plan = document.getElementById("dashboard-plan");
   if (plan) plan.textContent = user.plan_type;
 
-  // AI Capability Metric
-  const ai = document.getElementById("ai-status-text");
-  if (ai) {
-    ai.textContent = isAiPlan(user.plan_type)
-      ? "Semantic Vector Search"
-      : "Keyword Search included";
+  // AI Capability Metric Gauge
+  const aiFill = document.getElementById("ai-gauge-fill");
+  const aiText = document.getElementById("ai-status-text");
+  if (aiFill) {
+    const aiLimit = usage?.ai_daily_limit || 100;
+    const aiUsed = usage?.ai_queries_today || 0;
+    const aiPct = aiLimit > 0 ? Math.min(100, Math.round((aiUsed / aiLimit) * 100)) : 0;
+    const offset = 100.5 - (aiPct / 100) * 100.5;
+    aiFill.style.strokeDashoffset = offset;
+  }
+  if (aiText) {
+    const aiLimit = usage?.ai_daily_limit || 100;
+    const aiUsed = usage?.ai_queries_today || 0;
+    aiText.textContent = `${aiUsed}/${aiLimit}`;
   }
 
   const aiAllowance = document.getElementById("ai-allowance-meta");
@@ -608,6 +679,23 @@ async function initAIChat(user) {
   if (!form || !input || !history) return;
   const clearChatButton = document.getElementById("btn-clear-chat");
 
+  // Mode Selector Logic
+  let activeMode = "general";
+  const modePills = document.querySelectorAll(".chat-mode-selector .filter-pill");
+  modePills.forEach((pill) => {
+    pill.addEventListener("click", () => {
+      modePills.forEach((p) => p.classList.remove("active"));
+      pill.classList.add("active");
+      activeMode = pill.dataset.mode;
+    });
+  });
+
+  // Auto-expanding textarea
+  input.addEventListener("input", () => {
+    input.style.height = "auto";
+    input.style.height = `${input.scrollHeight}px`;
+  });
+
   // Local AI Status Banner
   const statusText = document.getElementById("ai-engine-status-text");
   const quotaText = document.getElementById("ai-engine-quota-text");
@@ -670,6 +758,190 @@ async function initAIChat(user) {
           <button type="button" class="prompt-chip" data-query="Who is the author of this document?"><span>Who is the author of this document?</span></button>
           <button type="button" class="prompt-chip" data-query="Summarize the key points in this document."><span>Summarize the key points</span></button>
           <button type="button" class="prompt-chip" data-query="What are the most important requirements?"><span>Find the important requirements</span></button>
+        </div>
+      </div>`;
+    history.querySelectorAll(".prompt-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        input.value = chip.dataset.query || "";
+        input.focus();
+      });
+    });
+  };
+
+  clearChatButton?.addEventListener("click", () => {
+    if (form.dataset.busy === "true") return;
+    renderEmptyState();
+    input.value = "";
+    input.focus();
+  });
+
+  history.querySelectorAll(".prompt-chip").forEach((chip) => {
+    chip.addEventListener("click", () => {
+      input.value = chip.dataset.query || "";
+      input.focus();
+    });
+  });
+
+  let lastQuery = "";
+
+  const submitQuery = async (queryText) => {
+    const query = (queryText || input.value).trim();
+    if (!query || form.dataset.busy === "true") return;
+
+    form.dataset.busy = "true";
+    lastQuery = query;
+    input.value = "";
+    input.style.height = "auto";
+
+    // Clear empty state on first message
+    const emptyState = history.querySelector(".chat-empty-state");
+    if (emptyState) emptyState.remove();
+
+    // User Message
+    const userMsg = document.createElement("div");
+    userMsg.className = "message user";
+    userMsg.innerHTML = `
+      <div class="message-label">You</div>
+      <div class="message-content">${escapeHtml(query).replace(/\n/g, "<br>")}</div>`;
+    history.appendChild(userMsg);
+
+    // Loading Assistant Message
+    const loading = document.createElement("div");
+    loading.className = "message assistant loading slide-up-fade";
+    const conversationalQuery = isGreeting(query);
+    loading.innerHTML = `
+      <div class="message-header">
+        <span class="message-label">CipherQ</span>
+        <span class="badge badge-meta">${conversationalQuery ? "RESPONDING" : "SEARCHING YOUR VAULT"}</span>
+      </div>
+      <div class="muted" style="display:flex;align-items:center">
+        <span class="spinner-dots"><span></span><span></span><span></span></span>
+        <span>${conversationalQuery ? "Preparing a response…" : "Retrieving relevant evidence…"}</span>
+      </div>`;
+    history.appendChild(loading);
+    history.scrollTop = history.scrollHeight;
+
+    try {
+      // Apply prompt wrapping based on active mode
+      const wrappedQuery = MODE_TEMPLATES[activeMode] + query;
+      const result = await api.queryAI(wrappedQuery);
+      loading.remove();
+
+      const answerMsg = document.createElement("div");
+      answerMsg.className = "message assistant slide-up-fade";
+      const conversationResponse = result.response_kind === "CONVERSATION" || conversationalQuery;
+      const outOfScopeResponse = result.response_kind === "OUT_OF_SCOPE";
+
+      if (conversationalQuery && result.response_kind !== "CONVERSATION") {
+        result.answer = "Hi! I’m CipherQ. Ask me anything about your indexed documents when you’re ready.";
+        result.citations = [];
+        result.has_sufficient_evidence = true;
+      }
+
+      // Process Inline Citations
+      let processedAnswer = result.answer;
+      let citationsHtml = "";
+      if (!conversationResponse && result.citations && result.citations.length > 0) {
+        result.citations.forEach((cite, index) => {
+          const marker = `<span class="citation-marker" data-cite-id="${index}">${index + 1}</span>`;
+          // Simple heuristic: if the snippet is in the answer, wrap it.
+          // In a real app, the backend would provide offsets.
+          if (processedAnswer.includes(cite.snippet)) {
+            processedAnswer = processedAnswer.replace(cite.snippet, `${cite.snippet}${marker}`);
+          }
+        });
+
+        citationsHtml = `
+          <details class="citations-container">
+            <summary class="citations-title">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+              </svg>
+              <span>Sources (${result.citations.length})</span>
+            </summary>
+            <div class="citations-list">
+              ${result.citations.map((c, idx) => `
+                <div class="citation-card" id="cite-card-${idx}">
+                  <div class="citation-header">
+                    <span class="citation-source">${escapeHtml(c.filename)} &bull; Page ${c.page_number}</span>
+                    <span class="badge badge-meta" style="font-size:0.62rem">${escapeHtml(c.match_type || "Match")}</span>
+                  </div>
+                  <div class="citation-snippet">${escapeHtml(c.snippet)}</div>
+                </div>`).join("")}
+            </div>
+          </details>`;
+      }
+
+      const evidenceWarning = result.has_sufficient_evidence
+        || conversationResponse
+        || outOfScopeResponse
+        ? ""
+        : `<div class="message-evidence-alert alert-warning">
+             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+             <span>I couldn’t find enough evidence in your indexed documents. Index a file in the Vault, then try again.</span>
+           </div>`;
+
+      answerMsg.innerHTML = `
+        <div class="message-header">
+          <span class="message-label">CipherQ</span>
+          <span class="badge badge-meta">${conversationResponse ? "READY TO HELP" : outOfScopeResponse ? "VAULT-FOCUSED" : "GROUNDED ANSWER"} ${activeMode !== 'general' ? `[${activeMode.toUpperCase()}]` : ''}</span>
+        </div>
+        <div class="message-content">${escapeHtml(processedAnswer).replace(/\n/g, "<br>")}</div>
+        ${evidenceWarning}
+        ${citationsHtml}`;
+
+      // Add citation hover logic
+      answerMsg.querySelectorAll(".citation-marker").forEach(marker => {
+        marker.onmouseenter = () => {
+          const id = marker.dataset.citeId;
+          document.getElementById(`cite-card-${id}`)?.classList.add("citation-highlight");
+        };
+        marker.onmouseleave = () => {
+          const id = marker.dataset.citeId;
+          document.getElementById(`cite-card-${id}`)?.classList.remove("citation-highlight");
+        };
+      });
+
+      history.appendChild(answerMsg);
+    } catch (error) {
+      loading.remove();
+      const failure = document.createElement("div");
+      failure.className = "message assistant";
+      failure.innerHTML = `
+        <div class="message-header">
+          <span class="message-label" style="color:var(--cq-danger)">Query error</span>
+        </div>
+        <div class="message-content" style="color:#f87171">${escapeHtml(error.message)}</div>
+        <button type="button" class="btn btn-outline btn-sm btn-retry-query" style="margin-top:12px">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
+          <span>Retry query</span>
+        </button>`;
+
+      failure.querySelector(".btn-retry-query")?.addEventListener("click", () => {
+        failure.remove();
+        submitQuery(lastQuery);
+      });
+
+      history.appendChild(failure);
+    } finally {
+      form.dataset.busy = "false";
+      history.scrollTop = history.scrollHeight;
+    }
+  };
+
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitQuery();
+  });
+
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && !event.shiftKey) {
+      event.preventDefault();
+      submitQuery();
+    }
+  });
+} data-query="What are the most important requirements?"><span>Find the important requirements</span></button>
         </div>
       </div>`;
     history.querySelectorAll(".prompt-chip").forEach((chip) => {
@@ -846,14 +1118,11 @@ async function initAccount(user) {
     document.getElementById("account-quota").textContent = formatBytes(usage.storage_quota_bytes);
     document.getElementById("account-ai-limit").textContent = `${usage.ai_daily_limit} queries/day`;
 
-    const storageMeta = document.getElementById("account-storage-meta");
-    if (storageMeta) {
-      const pct = Math.round((usage.storage_bytes_used / usage.storage_quota_bytes) * 100);
-      storageMeta.textContent = `${formatBytes(usage.storage_bytes_used)} used (${pct}%)`;
-    }
+    updateUsageMetrics(user, usage);
   }
 
   // Active Plan Highlighting on Plan Cards
+
   if (user.plan_type === "FREE") {
     const freeCard = document.getElementById("card-plan-free");
     if (freeCard) {
@@ -939,6 +1208,9 @@ async function initApp() {
   applyTheme(localStorage.getItem("cipherq-theme") || "light");
   setupThemeToggle();
   setupMobileNav();
+
+  // Dynamic Pricing Population
+  updatePricingUI();
 
   const page = location.pathname.split("/").pop() || "index.html";
 

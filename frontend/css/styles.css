@@ -2252,12 +2252,64 @@ body {
   border-radius: 18px;
 }
 
-/* Final workspace alignment pass */
-.workspace-main {
-  width: calc(100% - 256px);
-  max-width: 1440px;
-  margin-left: 256px;
-  padding: 46px clamp(28px, 4vw, 72px) 72px;
+/* Shimmering Loading State */
+.message.assistant.loading {
+  border-color: var(--cq-emerald);
+  animation: shimmerGlow 2s infinite linear;
+  background: linear-gradient(145deg, var(--cq-surface), var(--cq-surface-raised));
+}
+
+@keyframes shimmerGlow {
+  0% { box-shadow: 0 0 5px var(--cq-emerald-glow); }
+  50% { box-shadow: 0 0 20px var(--cq-emerald-glow); }
+  100% { box-shadow: 0 0 5px var(--cq-emerald-glow); }
+}
+
+/* Message Entrance Animation */
+.slide-up-fade {
+  animation: slideUpFade 0.4s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+}
+
+@keyframes slideUpFade {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Inline Citations */
+.citation-marker {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.65rem;
+  font-weight: 800;
+  color: var(--cq-emerald);
+  background: var(--cq-emerald-glow);
+  border: 1px solid var(--cq-emerald);
+  border-radius: 3px;
+  width: 14px;
+  height: 14px;
+  margin: 0 2px;
+  vertical-align: super;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.citation-marker:hover {
+  background: var(--cq-emerald);
+  color: #fff;
+  transform: scale(1.2);
+}
+
+.citation-highlight {
+  outline: 2px solid var(--cq-emerald) !important;
+  background: rgba(16, 185, 129, 0.1) !important;
+  transition: all 0.3s ease;
 }
 
 .workspace-top {
