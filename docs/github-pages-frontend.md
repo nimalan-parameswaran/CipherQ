@@ -97,11 +97,13 @@ COOKIE_SECURE=True
 COOKIE_SAMESITE=none
 ```
 
-CORS compares origins, not the `/CipherQ/` path. These environment changes
-require separate approval and controlled deployment on the Arduino; this task
-does not deploy or apply them. A backend configured with `COOKIE_SAMESITE=lax`
-and `COOKIE_SECURE=false` will still reject the remote browser session even
-when CORS is correct.
+CORS compares origins, not the `/CipherQ/` path. The login endpoint also
+upgrades the cookie to `Secure; SameSite=None` when the request comes from an
+explicitly allowed external frontend origin, so a stale local cookie
+configuration cannot make a successful login immediately appear unauthenticated
+on GitHub Pages. The environment values above remain the recommended explicit
+production configuration and are required for clients that do not send an
+approved browser `Origin` header.
 
 ## Production security checklist
 

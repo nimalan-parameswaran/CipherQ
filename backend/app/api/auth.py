@@ -54,7 +54,12 @@ def get_session_cookie_options(request: Request) -> tuple[str, bool]:
     origin = request.headers.get("origin", "").rstrip("/")
     request_origin = str(request.base_url).rstrip("/")
 
-    if origin and origin != request_origin:
+    allowed_origins = {
+        configured_origin.strip().rstrip("/")
+        for configured_origin in settings.CORS_ALLOWED_ORIGINS.split(",")
+        if configured_origin.strip()
+    }
+    if origin in allowed_origins and origin != request_origin:
         same_site = "none"
         secure = True
 
