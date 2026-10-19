@@ -1939,6 +1939,66 @@ body[data-theme="dark"]:not(.workspace-body) .price-card-muted {
     transition: none !important;
     animation: none !important;
   }
+
+  @media (max-width: 420px) {
+    .site-nav {
+      width: calc(100% - 20px);
+      gap: 10px;
+    }
+
+    .brand-name {
+      font-size: 1rem;
+    }
+
+    .nav-actions {
+      gap: 6px;
+    }
+
+    .nav-actions .btn {
+      padding-right: 10px;
+      padding-left: 10px;
+      font-size: .72rem;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.35rem, 14vw, 3.2rem);
+    }
+
+    .section-heading h2 {
+      font-size: 1.85rem;
+    }
+
+    .workspace-main {
+      padding-right: 10px;
+      padding-left: 10px;
+    }
+
+    .workspace-top h1 {
+      font-size: 1.65rem;
+    }
+
+    .workspace-top .nav-actions .btn {
+      flex-basis: 100%;
+    }
+
+    .workspace-body .card,
+    .workspace-body .chat-form {
+      padding: 16px;
+    }
+
+    .workspace-body .chat {
+      padding: 10px;
+    }
+
+    .workspace-body .message {
+      padding: 14px;
+      font-size: .88rem;
+    }
+
+    .chat-input-hint {
+      font-size: .68rem;
+    }
+  }
 }
 
 /* ==========================================================================
@@ -2296,6 +2356,19 @@ body {
   .workspace-main {
     max-width: none;
   }
+
+  .workspace-main > section,
+  .workspace-main > .ai-status-banner,
+  .workspace-main > .alert,
+  .workspace-main > .chat,
+  .workspace-main > .chat-form,
+  .workspace-top {
+    max-width: none;
+  }
+
+  .workspace-body .grid-4 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 700px) {
@@ -2360,6 +2433,13 @@ body {
     padding: 24px 14px 40px;
   }
 
+  .workspace-main > .grid,
+  .workspace-body .grid-4,
+  .workspace-body .grid-3,
+  .workspace-body .grid-2 {
+    grid-template-columns: 1fr;
+  }
+
   .workspace-top {
     min-height: 0;
     margin-bottom: 26px;
@@ -2398,7 +2478,23 @@ body {
 
   .workspace-body .chat {
     min-height: 420px;
+    max-height: none;
     padding: 14px;
+  }
+
+  .workspace-body .chat-form-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .workspace-body .chat-form-footer .btn {
+    width: 100%;
+  }
+
+  .workspace-body .table-wrap {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
   }
 
   .workspace-body .message {
