@@ -363,7 +363,7 @@ class SearchService:
 
         if not hits:
             return {
-                "answer": "The indexed documents in your vault do not contain sufficient evidence to answer this query.",
+                "answer": "I couldn’t find enough evidence in your indexed documents to answer that. Index a file in the Vault and try again.",
                 "citations": [],
                 "has_sufficient_evidence": False,
                 "response_kind": "GROUNDED",

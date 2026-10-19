@@ -1255,6 +1255,14 @@ body[data-theme="dark"]:not(.workspace-body) .price-card-muted {
   letter-spacing: -0.005em;
 }
 
+.workspace-body .message.assistant .badge-meta {
+  color: var(--cq-emerald);
+  background: var(--cq-emerald-glow);
+  border-color: var(--cq-border-hover);
+  font-family: var(--font);
+  letter-spacing: .04em;
+}
+
 .message-evidence-alert {
   margin-top: 10px;
   padding: 8px 12px;

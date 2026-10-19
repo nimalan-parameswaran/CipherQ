@@ -751,9 +751,18 @@ async function initAIChat(user) {
 
       const answerMsg = document.createElement("div");
       answerMsg.className = "message assistant";
+      const conversationResponse = result.response_kind === "CONVERSATION" || conversationalQuery;
+
+      // Keep greetings conversational even when an older backend deployment
+      // returns the pre-conversation retrieval response contract.
+      if (conversationalQuery && result.response_kind !== "CONVERSATION") {
+        result.answer = "Hi! I’m CipherQ. Ask me anything about your indexed documents when you’re ready.";
+        result.citations = [];
+        result.has_sufficient_evidence = true;
+      }
 
       let citationsHtml = "";
-      if (result.citations && result.citations.length > 0) {
+      if (!conversationResponse && result.citations && result.citations.length > 0) {
         citationsHtml = `
           <details class="citations-container">
             <summary class="citations-title">
@@ -776,19 +785,18 @@ async function initAIChat(user) {
           </details>`;
       }
 
-      const conversationResponse = result.response_kind === "CONVERSATION" || conversationalQuery;
       const evidenceWarning = result.has_sufficient_evidence
         || conversationResponse
         ? ""
         : `<div class="message-evidence-alert alert-warning">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-             <span>No sufficient indexed evidence was found. Index a document in the Vault and try again.</span>
+             <span>I couldn’t find enough evidence in your indexed documents. Index a file in the Vault, then try again.</span>
            </div>`;
 
       answerMsg.innerHTML = `
         <div class="message-header">
           <span class="message-label">CipherQ</span>
-          <span class="badge badge-meta">${conversationResponse ? "CONVERSATION" : "GROUNDED ANSWER"}</span>
+          <span class="badge badge-meta">${conversationResponse ? "READY TO HELP" : "GROUNDED ANSWER"}</span>
         </div>
         <div class="message-content">${escapeHtml(result.answer).replace(/\n/g, "<br>")}</div>
         ${evidenceWarning}
