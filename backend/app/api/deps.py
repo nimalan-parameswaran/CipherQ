@@ -26,10 +26,15 @@ async def get_current_session_and_user(
     """
     token = request.cookies.get(settings.SESSION_COOKIE_NAME)
     if not token:
+        authorization = request.headers.get("Authorization", "")
+        scheme, _, bearer_token = authorization.partition(" ")
+        if scheme.lower() == "bearer" and bearer_token:
+            token = bearer_token.strip()
+    if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Authentication required: No session cookie present.",
-            headers={"WWW-Authenticate": "Cookie"}
+            detail="Authentication required: No session cookie or bearer session present.",
+            headers={"WWW-Authenticate": "Cookie, Bearer"}
         )
 
     token_hash = hash_session_token(token)

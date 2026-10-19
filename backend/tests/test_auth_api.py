@@ -147,6 +147,14 @@ async def test_cross_origin_login_issues_browser_compatible_cookie(client: Async
     assert "secure" in cookie_header
     assert "partitioned" in cookie_header
 
+    client.cookies.clear()
+    bearer_me = await client.get(
+        "/api/v1/auth/me",
+        headers={"Authorization": f"Bearer {login_res.json()['session_token']}"},
+    )
+    assert bearer_me.status_code == 200
+    assert bearer_me.json()["email"] == email
+
 
 @pytest.mark.asyncio
 async def test_login_wrong_password_rejected(client: AsyncClient):

@@ -33,6 +33,7 @@ class SessionResponse(BaseModel):
     user: UserResponse
     csrf_token: str
     expires_at: datetime
+    session_token: str | None = None
 
 
 class MessageResponse(BaseModel):

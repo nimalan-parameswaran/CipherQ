@@ -50,10 +50,13 @@ unset, the checked-in empty configuration is preserved and the deployed site
 fails closed with a backend-configuration message.
 
 The client appends `/api/v1` and preserves the existing request paths, request
-bodies, HttpOnly-cookie session design, CSRF header handling, and
-`credentials: "include"` behavior. The URL is not a secret. Never put
-passwords, tokens, private keys, master keys, local IP addresses, or local
-development URLs in it.
+bodies, CSRF header handling, and `credentials: "include"` behavior. Same-origin
+deployments use the HttpOnly-cookie session path. For static cross-origin
+deployments where browsers block third-party cookies, the login response also
+provides the opaque session token; the frontend keeps it only in
+`sessionStorage` for the current tab and sends it as a Bearer token. The URL is
+not a secret. Never put passwords, private keys, master keys, local IP
+addresses, or local development URLs in it.
 
 If the URL is empty on GitHub Pages, or the backend cannot be reached, the UI
 shows a backend-unavailable message and does not use mock data or claim that a

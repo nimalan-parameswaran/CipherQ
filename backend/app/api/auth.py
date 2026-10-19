@@ -193,7 +193,10 @@ async def login_user(
     return SessionResponse(
         user=UserResponse.model_validate(user),
         csrf_token=csrf_token,
-        expires_at=expires_at
+        expires_at=expires_at,
+        # Cross-origin static frontends may block third-party cookies. The
+        # frontend keeps this token only in sessionStorage for the current tab.
+        session_token=raw_session_token
     )
 
 

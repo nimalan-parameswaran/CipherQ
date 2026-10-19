@@ -1,6 +1,7 @@
 // CipherQ Frontend API Client (Connected to Real FastAPI Endpoints)
-// Session tokens are handled strictly via HttpOnly cookies (never stored in client storage).
-// Only the CSRF token is held in sessionStorage for header injection on mutating requests.
+// Same-origin sessions use HttpOnly cookies. Cross-origin static deployments
+// also keep the short-lived session token in sessionStorage when browsers
+// block third-party cookies.
 //
 // CROSS-ORIGIN DEPLOYMENT:
 //   When frontend is on a different origin from the backend (e.g. GitHub Pages +
@@ -88,6 +89,25 @@ class CipherQAPIClient {
     return sessionStorage.getItem("cipherq_csrf") || "";
   }
 
+  getSessionToken() {
+    return sessionStorage.getItem("cipherq_session") || "";
+  }
+
+  setSessionToken(token) {
+    if (token) {
+      sessionStorage.setItem("cipherq_session", token);
+    } else {
+      sessionStorage.removeItem("cipherq_session");
+    }
+  }
+
+  _authHeaders() {
+    const headers = { "X-CSRF-Token": this.getCSRFToken() };
+    const token = this.getSessionToken();
+    if (token) headers.Authorization = `Bearer ${token}`;
+    return headers;
+  }
+
   setCSRFToken(token) {
     if (token) {
       sessionStorage.setItem("cipherq_csrf", token);
@@ -132,9 +152,11 @@ class CipherQAPIClient {
     }
     const data = await res.json();
     this.setCSRFToken(data.csrf_token);
+    if (this._crossOrigin && data.session_token) {
+      this.setSessionToken(data.session_token);
+    }
 
-    // Confirm the browser accepted the Set-Cookie response before navigating
-    // away from the public page. This prevents a false successful login.
+    // Confirm that the API accepts the newly-created session before navigating.
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const session = await this.getMe();
       if (session) return data;
@@ -144,9 +166,10 @@ class CipherQAPIClient {
     }
 
     this.setCSRFToken(null);
+    this.setSessionToken(null);
     throw new Error(
-      "Login succeeded, but the browser did not retain the session cookie. " +
-      "The API must use HTTPS with credentialed CORS and a SameSite=None; Secure; Partitioned cookie."
+      "Login succeeded, but the browser could not establish the session. " +
+      "Check the API HTTPS and credentialed CORS configuration."
     );
   }
 
@@ -156,10 +179,11 @@ class CipherQAPIClient {
     try {
       await this._fetch(`${this.baseUrl}/auth/logout`, this._fetchOptions({
         method: "POST",
-        headers: { "X-CSRF-Token": csrf }
+        headers: this._authHeaders()
       }));
     } finally {
       this.setCSRFToken(null);
+      this.setSessionToken(null);
     }
   }
 
@@ -167,10 +191,11 @@ class CipherQAPIClient {
     this._assertConfigured();
     try {
       const res = await this._fetch(`${this.baseUrl}/auth/me`, this._fetchOptions({
-        headers: { "X-CSRF-Token": this.getCSRFToken() }
+        headers: this._authHeaders()
       }));
       if (res.status === 401) {
         this.setCSRFToken(null);
+        this.setSessionToken(null);
         return null;
       }
       if (!res.ok) {
@@ -195,7 +220,7 @@ class CipherQAPIClient {
     this._assertConfigured();
     try {
       const res = await this._fetch(`${this.baseUrl}/auth/usage`, this._fetchOptions({
-        headers: { "X-CSRF-Token": this.getCSRFToken() }
+        headers: this._authHeaders()
       }));
       if (!res.ok) return null;
       return await res.json();
@@ -209,7 +234,7 @@ class CipherQAPIClient {
   async listFiles() {
     this._assertConfigured();
     const res = await this._fetch(`${this.baseUrl}/files`, this._fetchOptions({
-      headers: { "X-CSRF-Token": this.getCSRFToken() }
+      headers: this._authHeaders()
     }));
     if (res.status === 401) {
       return null;
@@ -230,7 +255,10 @@ class CipherQAPIClient {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
       xhr.open("POST", `${this.baseUrl}/files`, true);
-      xhr.setRequestHeader("X-CSRF-Token", this.getCSRFToken());
+      const authHeaders = this._authHeaders();
+      Object.entries(authHeaders).forEach(([name, value]) => {
+        xhr.setRequestHeader(name, value);
+      });
 
       // Send cookies cross-origin when configured for production deployment.
       // withCredentials is the XHR equivalent of fetch's credentials: 'include'.
@@ -273,7 +301,10 @@ class CipherQAPIClient {
 
   async downloadFile(fileId, filename) {
     this._assertConfigured();
-    const res = await this._fetch(`${this.baseUrl}/files/${fileId}/download`, this._fetchOptions());
+    const res = await this._fetch(
+      `${this.baseUrl}/files/${fileId}/download`,
+      this._fetchOptions({ headers: this._authHeaders() })
+    );
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Download failed." }));
       throw new Error(err.detail || "Download failed.");
@@ -297,7 +328,7 @@ class CipherQAPIClient {
     this._assertConfigured();
     const res = await this._fetch(`${this.baseUrl}/files/${fileId}`, this._fetchOptions({
       method: "DELETE",
-      headers: { "X-CSRF-Token": this.getCSRFToken() }
+      headers: this._authHeaders()
     }));
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Deletion failed." }));
@@ -310,7 +341,7 @@ class CipherQAPIClient {
     this._assertConfigured();
     const res = await this._fetch(`${this.baseUrl}/ai/index/${fileId}`, this._fetchOptions({
       method: "POST",
-      headers: { "X-CSRF-Token": this.getCSRFToken() }
+      headers: this._authHeaders()
     }));
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Indexing failed." }));
@@ -323,7 +354,7 @@ class CipherQAPIClient {
     this._assertConfigured();
     const res = await this._fetch(`${this.baseUrl}/ai/index/${fileId}`, this._fetchOptions({
       method: "DELETE",
-      headers: { "X-CSRF-Token": this.getCSRFToken() }
+      headers: this._authHeaders()
     }));
     if (!res.ok) {
       const err = await res.json().catch(() => ({ detail: "Unindexing failed." }));
@@ -336,10 +367,7 @@ class CipherQAPIClient {
     this._assertConfigured();
     const res = await this._fetch(`${this.baseUrl}/ai/query`, this._fetchOptions({
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "X-CSRF-Token": this.getCSRFToken()
-      },
+      headers: { "Content-Type": "application/json", ...this._authHeaders() },
       body: JSON.stringify({ query, limit })
     }));
     if (!res.ok) {
