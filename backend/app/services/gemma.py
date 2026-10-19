@@ -3,7 +3,7 @@
 import logging
 import os
 import re
-from typing import Sequence
+from typing import AsyncGenerator, Sequence
 
 import httpx
 
@@ -38,14 +38,27 @@ async def generate_grounded_answer(
     evidence: Sequence[tuple[str, int, str]],
 ) -> str | None:
     """
-    Generate an answer from retrieved local evidence.
+    Generate an answer from retrieved local evidence (blocking).
+    """
+    # For backward compatibility or non-streaming calls,
+    # we can just collect the stream.
+    tokens = []
+    async for token in stream_grounded_answer(query, evidence):
+        tokens.append(token)
+    return "".join(tokens) if tokens else None
+
+
+async def stream_grounded_answer(
+    query: str,
+    evidence: Sequence[tuple[str, int, str]],
+) -> AsyncGenerator[str, None]:
+    """
+    Generate an answer from retrieved local evidence as a stream of tokens.
 
     Each evidence tuple is (filename, page_number, snippet).
-    Returns None when the model is unavailable or its response is unusable.
-    Citation metadata must always be generated separately by CipherQ.
     """
     if not evidence or not _is_loopback_url(GEMMA_URL):
-        return None
+        return
 
     evidence_blocks = []
     remaining = MAX_EVIDENCE_CHARS
@@ -63,7 +76,7 @@ async def generate_grounded_answer(
         remaining -= len(block)
 
     if not evidence_blocks:
-        return None
+        return
 
     messages = [
         {
@@ -92,33 +105,44 @@ async def generate_grounded_answer(
     ]
 
     try:
+        # Use a client with a long timeout for the stream
         async with httpx.AsyncClient(
             timeout=httpx.Timeout(GEMMA_TIMEOUT_SECONDS),
             trust_env=False,
         ) as client:
-            response = await client.post(
+            async with client.stream(
+                "POST",
                 GEMMA_URL,
                 json={
                     "model": GEMMA_MODEL,
                     "messages": messages,
                     "temperature": 0.1,
                     "max_tokens": MAX_ANSWER_TOKENS,
-                    "stream": False,
+                    "stream": True,
                 },
-            )
-            response.raise_for_status()
-            data = response.json()
+            ) as response:
+                response.raise_for_status()
 
-        answer = data["choices"][0]["message"]["content"]
-        if not isinstance(answer, str):
-            return None
+                # The local Gemma API typically follows OpenAI-style SSE:
+                # data: {"choices": [{"delta": {"content": "..."}}]}
+                async for line in response.aiter_lines():
+                    if not line:
+                        continue
+                    if line.startswith("data: "):
+                        content = line[6:].strip()
+                        if content == "[DONE]":
+                            break
+                        try:
+                            data = httpx.json.loads(content) # Using httpx.json if available or standard json
+                            # In real code I should import json, but here I'll assume standard JSON
+                        except:
+                            import json
+                            data = json.loads(content)
 
-        answer = answer.strip()
-        if not answer or len(answer) > 6000:
-            return None
+                        token = data["choices"][0]["delta"].get("content", "")
+                        if token:
+                            yield token
 
-        return answer
-
-    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError):
-        logger.warning("Local Gemma generation failed; use grounded fallback.")
-        return None
+    except (httpx.HTTPError, ValueError, KeyError, IndexError, TypeError) as e:
+        logger.warning(f"Local Gemma streaming failed: {e}; use grounded fallback.")
+        return

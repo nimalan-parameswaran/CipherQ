@@ -18,8 +18,6 @@ function applyTheme(theme) {
   document.documentElement.setAttribute("data-theme", selected);
   localStorage.setItem("cipherq-theme", selected);
   document.querySelectorAll("#theme-toggle").forEach((button) => {
-    // Theme toggle is now an icon, so we don't change text,
-    // but we could add a title or aria-label.
     button.setAttribute("title", selected === "dark" ? "Switch to Light Mode" : "Switch to Dark Mode");
   });
 }
@@ -48,8 +46,7 @@ function authLock(title, copy, icon = "Q") {
       <div class="hero-actions" style="justify-content:center;margin-top:24px">
         <button id="lock-btn-login" class="btn btn-primary">Log in</button>
         <button id="lock-btn-register" class="btn btn-outline">Create account</button>
-      </div>
-    </div>`;
+      </div>`;
   document.getElementById("lock-btn-login")?.addEventListener("click", () => openAuthModal("login"));
   document.getElementById("lock-btn-register")?.addEventListener("click", () => openAuthModal("register"));
 }
@@ -201,26 +198,22 @@ function updatePricingUI() {
     const plan = window.PLANS_CONFIG[planId];
     if (!plan) return;
 
-    // Update Price and Period
     const priceEl = card.querySelector(".price");
     if (priceEl) {
       priceEl.innerHTML = `${plan.price} <span class="muted price-period">${plan.period}</span>`;
     }
 
-    // Update Badge
     const badge = card.querySelector(".badge");
     if (badge) {
       badge.textContent = plan.name;
       badge.className = `badge ${plan.badgeClass}`;
     }
 
-    // Update Feature List
     const list = card.querySelector("ul");
     if (list) {
       list.innerHTML = plan.features.map(f => `<li>${f}</li>`).join("");
     }
 
-    // Handle Coming Soon / Disabled state
     const btn = card.querySelector("button");
     if (btn && plan.isComingSoon) {
       btn.disabled = true;
@@ -233,14 +226,12 @@ function updatePricingUI() {
 function updateUsageMetrics(user, usage) {
   if (!user || !usage) return;
 
-  // Storage in Account page
   const storageMeta = document.getElementById("account-storage-meta");
   if (storageMeta) {
     const pct = Math.round((usage.storage_bytes_used / usage.storage_quota_bytes) * 100);
     storageMeta.textContent = `${formatBytes(usage.storage_bytes_used)} used (${pct}%)`;
   }
 
-  // AI Limit in Account page
   const aiLimit = document.getElementById("account-ai-limit");
   if (aiLimit) {
     aiLimit.textContent = `${usage.ai_daily_limit} queries/day`;
@@ -248,7 +239,6 @@ function updateUsageMetrics(user, usage) {
 }
 
 function updateNavbar(user) {
-  // Sync all user displays and plan badges on the page
   const userDisplays = document.querySelectorAll("#user-display");
   const planBadges = document.querySelectorAll("#plan-badge");
   const sidebarUser = document.getElementById("sidebar-user");
@@ -261,7 +251,6 @@ function updateNavbar(user) {
     });
     if (sidebarUser) sidebarUser.textContent = user.email;
 
-    // Attach click handler to all logout buttons
     document.querySelectorAll("#btn-nav-logout").forEach((btn) => {
       btn.onclick = async () => {
         await api.logout();
@@ -270,7 +259,6 @@ function updateNavbar(user) {
     });
   }
 
-  // Handle public landing page navbar (.nav-actions)
   if (!document.body.classList.contains("workspace-body")) {
     const actions = document.querySelector(".nav-actions");
     if (!actions) return;
@@ -295,7 +283,6 @@ function updateNavbar(user) {
 }
 
 function setupMobileNav() {
-  // Landing page mobile menu
   const button = document.getElementById("mobile-menu");
   const links = document.getElementById("site-links");
   if (button && links) {
@@ -305,7 +292,6 @@ function setupMobileNav() {
     });
   }
 
-  // Workspace mobile drawer toggle
   const workspaceToggle = document.getElementById("mobile-sidebar-toggle");
   const sidebar = document.getElementById("workspace-sidebar");
   const backdrop = document.getElementById("sidebar-backdrop");
@@ -337,11 +323,9 @@ async function initDashboard(user) {
   const quota = usage?.storage_quota_bytes || 1000000000;
   const percentage = quota > 0 ? Math.min(100, Math.round((used / quota) * 100)) : 0;
 
-  // Header Greeting
   const name = document.getElementById("user-badge");
   if (name) name.textContent = user.email;
 
-  // Storage Metric Gauge
   const storageFill = document.getElementById("storage-gauge-fill");
   const storageText = document.getElementById("storage-text");
   if (storageFill) {
@@ -355,11 +339,9 @@ async function initDashboard(user) {
     storageDetail.textContent = `${formatBytes(Math.max(0, quota - used))} remaining in vault`;
   }
 
-  // Plan Metric
   const plan = document.getElementById("dashboard-plan");
   if (plan) plan.textContent = user.plan_type;
 
-  // AI Capability Metric Gauge
   const aiFill = document.getElementById("ai-gauge-fill");
   const aiText = document.getElementById("ai-status-text");
   if (aiFill) {
@@ -382,7 +364,6 @@ async function initDashboard(user) {
       : "FTS5 Keyword Search (Local)";
   }
 
-  // Stored Files Metric (Derived from real backend files array)
   const fileCount = document.getElementById("dashboard-file-count");
   if (fileCount) {
     const count = files?.length || 0;
@@ -395,7 +376,6 @@ async function initDashboard(user) {
     indexedCount.textContent = `${indexed} indexed for AI`;
   }
 
-  // Recent Files Table
   const recent = document.getElementById("recent-files");
   if (recent) {
     if (files?.length) {
@@ -476,7 +456,6 @@ function setupDropzone() {
   });
 }
 
-// Cached files for client-side search & filtering in the Vault
 let vaultFilesCache = [];
 let vaultActiveFilter = "all";
 let vaultSearchQuery = "";
@@ -505,7 +484,6 @@ function applyVaultFilter() {
     if (vaultFilesCache.length > 0) {
       container.innerHTML = `<tr><td colspan="5" class="muted" style="text-align:center;padding:35px">No files match the selected filter.</td></tr>`;
     } else {
-      // Must exactly contain this text for E2E tests
       container.innerHTML = `<tr><td colspan="5" class="muted" style="text-align:center;padding:35px">No encrypted files found in your vault. Upload a file above to begin.</td></tr>`;
     }
     return;
@@ -644,7 +622,6 @@ async function initFiles(user) {
 
   setupDropzone();
 
-  // Search input handler
   const searchInput = document.getElementById("vault-search-input");
   if (searchInput) {
     searchInput.addEventListener("input", (e) => {
@@ -653,7 +630,6 @@ async function initFiles(user) {
     });
   }
 
-  // Filter pills handler
   const filterPills = document.querySelectorAll(".filter-pill");
   filterPills.forEach((pill) => {
     pill.addEventListener("click", () => {
@@ -678,8 +654,8 @@ async function initAIChat(user) {
   const history = document.getElementById("ai-chat-history");
   if (!form || !input || !history) return;
   const clearChatButton = document.getElementById("btn-clear-chat");
+  const scrollBottomBtn = document.getElementById("btn-scroll-bottom");
 
-  // Mode Selector Logic
   let activeMode = "general";
   const modePills = document.querySelectorAll(".chat-mode-selector .filter-pill");
   modePills.forEach((pill) => {
@@ -690,13 +666,11 @@ async function initAIChat(user) {
     });
   });
 
-  // Auto-expanding textarea
   input.addEventListener("input", () => {
     input.style.height = "auto";
     input.style.height = `${input.scrollHeight}px`;
   });
 
-  // Local AI Status Banner
   const statusText = document.getElementById("ai-engine-status-text");
   const quotaText = document.getElementById("ai-engine-quota-text");
   const statusDot = document.getElementById("ai-engine-dot");
@@ -718,7 +692,6 @@ async function initAIChat(user) {
     if (statusDot) statusDot.classList.add("warning");
   }
 
-  // Helpful Empty State with Example Prompts
   history.innerHTML = `
     <div class="chat-empty-state">
       <div class="chat-empty-icon">
@@ -793,11 +766,9 @@ async function initAIChat(user) {
     input.value = "";
     input.style.height = "auto";
 
-    // Clear empty state on first message
     const emptyState = history.querySelector(".chat-empty-state");
     if (emptyState) emptyState.remove();
 
-    // User Message
     const userMsg = document.createElement("div");
     userMsg.className = "message user";
     userMsg.innerHTML = `
@@ -805,7 +776,6 @@ async function initAIChat(user) {
       <div class="message-content">${escapeHtml(query).replace(/\n/g, "<br>")}</div>`;
     history.appendChild(userMsg);
 
-    // Loading Assistant Message
     const loading = document.createElement("div");
     loading.className = "message assistant loading slide-up-fade";
     const conversationalQuery = isGreeting(query);
@@ -822,90 +792,98 @@ async function initAIChat(user) {
     history.scrollTop = history.scrollHeight;
 
     try {
-      // Apply prompt wrapping based on active mode
       const wrappedQuery = MODE_TEMPLATES[activeMode] + query;
-      const result = await api.queryAI(wrappedQuery);
-      loading.remove();
 
+      // --- STREAMING IMPLEMENTATION ---
+      const { url, options } = await api.queryAIStreaming(wrappedQuery);
+      const response = await fetch(url, options);
+
+      if (!response.ok) throw new Error(`AI Error: ${response.statusText}`);
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+
+      let fullAnswer = "";
+      let citations = [];
+      let modeUsed = "";
+      let responseKind = "";
+
+      loading.remove();
       const answerMsg = document.createElement("div");
       answerMsg.className = "message assistant slide-up-fade";
-      const conversationResponse = result.response_kind === "CONVERSATION" || conversationalQuery;
-      const outOfScopeResponse = result.response_kind === "OUT_OF_SCOPE";
+      answerMsg.innerHTML = `
+        <div class="message-header">
+          <span class="message-label">CipherQ</span>
+          <span class="badge badge-meta" id="current-ai-badge">Processing...</span>
+        </div>
+        <div class="message-content" id="streaming-content"></div>
+        <div id="streaming-citations"></div>`;
+      history.appendChild(answerMsg);
 
-      if (conversationalQuery && result.response_kind !== "CONVERSATION") {
-        result.answer = "Hi! I’m CipherQ. Ask me anything about your indexed documents when you’re ready.";
-        result.citations = [];
-        result.has_sufficient_evidence = true;
-      }
+      while (true) {
+        const { value, done } = await reader.read();
+        if (done) break;
 
-      // Process Inline Citations
-      let processedAnswer = result.answer;
-      let citationsHtml = "";
-      if (!conversationResponse && result.citations && result.citations.length > 0) {
-        result.citations.forEach((cite, index) => {
-          const marker = `<span class="citation-marker" data-cite-id="${index}">${index + 1}</span>`;
-          // Simple heuristic: if the snippet is in the answer, wrap it.
-          // In a real app, the backend would provide offsets.
-          if (processedAnswer.includes(cite.snippet)) {
-            processedAnswer = processedAnswer.replace(cite.snippet, `${cite.snippet}${marker}`);
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split("\n");
+
+        for (const line of lines) {
+          if (line.startsWith("data: ")) {
+            try {
+              const data = JSON.parse(line.slice(6));
+
+              if (data.citations) {
+                citations = data.citations;
+                modeUsed = data.mode;
+                responseKind = data.kind;
+                const badge = answerMsg.querySelector("#current-ai-badge");
+                if (badge) badge.textContent = responseKind === "CONVERSATION" ? "READY TO HELP" : responseKind === "OUT_OF_SCOPE" ? "VAULT-FOCUSED" : "GROUNDED ANSWER";
+              }
+
+              if (data.token) {
+                fullAnswer += data.token;
+                const contentDiv = answerMsg.querySelector("#streaming-content");
+                if (contentDiv) {
+                  // Use marked.js for markdown rendering
+                  contentDiv.innerHTML = marked.parse(fullAnswer);
+                  history.scrollTop = history.scrollHeight;
+                }
+              }
+            } catch (e) {
+              console.error("SSE parse error", e);
+            }
           }
-        });
-
-        citationsHtml = `
-          <details class="citations-container">
-            <summary class="citations-title">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-              </svg>
-              <span>Sources (${result.citations.length})</span>
-            </summary>
-            <div class="citations-list">
-              ${result.citations.map((c, idx) => `
-                <div class="citation-card" id="cite-card-${idx}">
-                  <div class="citation-header">
-                    <span class="citation-source">${escapeHtml(c.filename)} &bull; Page ${c.page_number}</span>
-                    <span class="badge badge-meta" style="font-size:0.62rem">${escapeHtml(c.match_type || "Match")}</span>
-                  </div>
-                  <div class="citation-snippet">${escapeHtml(c.snippet)}</div>
-                </div>`).join("")}
-            </div>
-          </details>`;
+        }
       }
 
-      const evidenceWarning = result.has_sufficient_evidence
-        || conversationResponse
-        || outOfScopeResponse
-        ? ""
-        : `<div class="message-evidence-alert alert-warning">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-             <span>I couldn’t find enough evidence in your indexed documents. Index a file in the Vault, then try again.</span>
-           </div>`;
+      if (citations && citations.length > 0) {
+        const citationsDiv = answerMsg.querySelector("#streaming-citations");
+        if (citationsDiv) {
+          citationsDiv.innerHTML = `
+            <details class="citations-container">
+              <summary class="citations-title">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                  <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
+                  <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
+                </svg>
+                <span>Sources (${citations.length})</span>
+              </summary>
+              <div class="citations-list">
+                ${citations.map((c, idx) => `
+                  <div class="citation-card" id="cite-card-${idx}">
+                    <div class="citation-header">
+                      <span class="citation-source">${escapeHtml(c.filename)} &bull; Page ${c.page_number}</span>
+                      <span class="badge badge-meta" style="font-size:0.62rem">${escapeHtml(c.match_type || "Match")}</span>
+                    </div>
+                    <div class="citation-snippet">${escapeHtml(c.snippet)}</div>
+                  </div>`).join("")}
+              </div>
+            </details>`;
+        }
+      }
 
-      answerMsg.innerHTML = `
-        <div class="message-header">
-          <span class="message-label">CipherQ</span>
-          <span class="badge badge-meta">${conversationResponse ? "READY TO HELP" : outOfScopeResponse ? "VAULT-FOCUSED" : "GROUNDED ANSWER"} ${activeMode !== 'general' ? `[${activeMode.toUpperCase()}]` : ''}</span>
-        </div>
-        <div class="message-content">${escapeHtml(processedAnswer).replace(/\n/g, "<br>")}</div>
-        ${evidenceWarning}
-        ${citationsHtml}`;
-
-      // Add citation hover logic
-      answerMsg.querySelectorAll(".citation-marker").forEach(marker => {
-        marker.onmouseenter = () => {
-          const id = marker.dataset.citeId;
-          document.getElementById(`cite-card-${id}`)?.classList.add("citation-highlight");
-        };
-        marker.onmouseleave = () => {
-          const id = marker.dataset.citeId;
-          document.getElementById(`cite-card-${id}`)?.classList.remove("citation-highlight");
-        };
-      });
-
-      history.appendChild(answerMsg);
     } catch (error) {
-      loading.remove();
+      if (loading) loading.remove();
       const failure = document.createElement("div");
       failure.className = "message assistant";
       failure.innerHTML = `
@@ -941,166 +919,20 @@ async function initAIChat(user) {
       submitQuery();
     }
   });
-} data-query="What are the most important requirements?"><span>Find the important requirements</span></button>
-        </div>
-      </div>`;
-    history.querySelectorAll(".prompt-chip").forEach((chip) => {
-      chip.addEventListener("click", () => {
-        input.value = chip.dataset.query || "";
-        input.focus();
-      });
-    });
-  };
 
-  clearChatButton?.addEventListener("click", () => {
-    if (form.dataset.busy === "true") return;
-    renderEmptyState();
-    input.value = "";
-    input.focus();
-  });
-
-  history.querySelectorAll(".prompt-chip").forEach((chip) => {
-    chip.addEventListener("click", () => {
-      input.value = chip.dataset.query || "";
-      input.focus();
-    });
-  });
-
-  let lastQuery = "";
-
-  const submitQuery = async (queryText) => {
-    const query = (queryText || input.value).trim();
-    if (!query || form.dataset.busy === "true") return;
-
-    form.dataset.busy = "true";
-    lastQuery = query;
-    input.value = "";
-
-    // Clear empty state on first message
-    const emptyState = history.querySelector(".chat-empty-state");
-    if (emptyState) emptyState.remove();
-
-    // User Message
-    const userMsg = document.createElement("div");
-    userMsg.className = "message user";
-    userMsg.innerHTML = `
-      <div class="message-label">You</div>
-      <div class="message-content">${escapeHtml(query).replace(/\n/g, "<br>")}</div>`;
-    history.appendChild(userMsg);
-
-    // Loading Assistant Message
-    const loading = document.createElement("div");
-    loading.className = "message assistant";
-    const conversationalQuery = isGreeting(query);
-    loading.innerHTML = `
-      <div class="message-header">
-        <span class="message-label">CipherQ</span>
-        <span class="badge badge-meta">${conversationalQuery ? "RESPONDING" : "SEARCHING YOUR VAULT"}</span>
-      </div>
-      <div class="muted" style="display:flex;align-items:center">
-        <span class="spinner-dots"><span></span><span></span><span></span></span>
-        <span>${conversationalQuery ? "Preparing a response…" : "Retrieving relevant evidence…"}</span>
-      </div>`;
-    history.appendChild(loading);
-    history.scrollTop = history.scrollHeight;
-
-    try {
-      const result = await api.queryAI(query);
-      loading.remove();
-
-      const answerMsg = document.createElement("div");
-      answerMsg.className = "message assistant";
-      const conversationResponse = result.response_kind === "CONVERSATION" || conversationalQuery;
-      const outOfScopeResponse = result.response_kind === "OUT_OF_SCOPE";
-
-      // Keep greetings conversational even when an older backend deployment
-      // returns the pre-conversation retrieval response contract.
-      if (conversationalQuery && result.response_kind !== "CONVERSATION") {
-        result.answer = "Hi! I’m CipherQ. Ask me anything about your indexed documents when you’re ready.";
-        result.citations = [];
-        result.has_sufficient_evidence = true;
-      }
-
-      let citationsHtml = "";
-      if (!conversationResponse && result.citations && result.citations.length > 0) {
-        citationsHtml = `
-          <details class="citations-container">
-            <summary class="citations-title">
-              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path>
-                <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path>
-              </svg>
-              <span>Sources (${result.citations.length})</span>
-            </summary>
-            <div class="citations-list">
-              ${result.citations.map((c) => `
-                <div class="citation-card">
-                  <div class="citation-header">
-                    <span class="citation-source">${escapeHtml(c.filename)} &bull; Page ${c.page_number}</span>
-                    <span class="badge badge-meta" style="font-size:0.62rem">${escapeHtml(c.match_type || "Match")}</span>
-                  </div>
-                  <div class="citation-snippet">${escapeHtml(c.snippet)}</div>
-                </div>`).join("")}
-            </div>
-          </details>`;
-      }
-
-      const evidenceWarning = result.has_sufficient_evidence
-        || conversationResponse
-        || outOfScopeResponse
-        ? ""
-        : `<div class="message-evidence-alert alert-warning">
-             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
-             <span>I couldn’t find enough evidence in your indexed documents. Index a file in the Vault, then try again.</span>
-           </div>`;
-
-      answerMsg.innerHTML = `
-        <div class="message-header">
-          <span class="message-label">CipherQ</span>
-          <span class="badge badge-meta">${conversationResponse ? "READY TO HELP" : outOfScopeResponse ? "VAULT-FOCUSED" : "GROUNDED ANSWER"}</span>
-        </div>
-        <div class="message-content">${escapeHtml(result.answer).replace(/\n/g, "<br>")}</div>
-        ${evidenceWarning}
-        ${citationsHtml}`;
-
-      history.appendChild(answerMsg);
-    } catch (error) {
-      loading.remove();
-      const failure = document.createElement("div");
-      failure.className = "message assistant";
-      failure.innerHTML = `
-        <div class="message-header">
-          <span class="message-label" style="color:var(--cq-danger)">Query error</span>
-        </div>
-        <div class="message-content" style="color:#f87171">${escapeHtml(error.message)}</div>
-        <button type="button" class="btn btn-outline btn-sm btn-retry-query" style="margin-top:12px">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 2v6h-6"></path><path d="M3 12a9 9 0 0 1 15-6.7L21 8"></path><path d="M3 22v-6h6"></path><path d="M21 12a9 9 0 0 1-15 6.7L3 16"></path></svg>
-          <span>Retry query</span>
-        </button>`;
-
-      failure.querySelector(".btn-retry-query")?.addEventListener("click", () => {
-        failure.remove();
-        submitQuery(lastQuery);
-      });
-
-      history.appendChild(failure);
-    } finally {
-      form.dataset.busy = "false";
+  // Scroll to Bottom Logic
+  if (scrollBottomBtn) {
+    scrollBottomBtn.onclick = () => {
       history.scrollTop = history.scrollHeight;
-    }
-  };
+      scrollBottomBtn.style.display = "none";
+    };
 
-  form.addEventListener("submit", (event) => {
-    event.preventDefault();
-    submitQuery();
-  });
-
-  input.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && !event.shiftKey) {
-      event.preventDefault();
-      submitQuery();
-    }
-  });
+    history.addEventListener("scroll", () => {
+      const threshold = 200;
+      const isAtBottom = history.scrollHeight - history.scrollTop - history.clientHeight < threshold;
+      scrollBottomBtn.style.display = isAtBottom ? "none" : "flex";
+    });
+  }
 }
 
 async function initAccount(user) {
@@ -1109,7 +941,6 @@ async function initAccount(user) {
     return;
   }
 
-  // Overview metrics
   document.getElementById("account-email").textContent = user.email;
   document.getElementById("account-plan").textContent = user.plan_type;
 
@@ -1117,11 +948,8 @@ async function initAccount(user) {
   if (usage) {
     document.getElementById("account-quota").textContent = formatBytes(usage.storage_quota_bytes);
     document.getElementById("account-ai-limit").textContent = `${usage.ai_daily_limit} queries/day`;
-
     updateUsageMetrics(user, usage);
   }
-
-  // Active Plan Highlighting on Plan Cards
 
   if (user.plan_type === "FREE") {
     const freeCard = document.getElementById("card-plan-free");
@@ -1147,7 +975,6 @@ async function initAccount(user) {
     }
   }
 
-  // Development Plan Management Toggle
   const button = document.getElementById("btn-toggle-plan");
   if (!button) return;
 
@@ -1181,8 +1008,6 @@ async function initApp() {
   ensureAuthModal();
   let user;
   try {
-    // Allow the browser a brief interval to expose a newly-issued
-    // cross-origin cookie after a full-page navigation.
     for (let attempt = 0; attempt < 3; attempt += 1) {
       user = await api.getMe();
       if (user) break;
@@ -1209,7 +1034,6 @@ async function initApp() {
   setupThemeToggle();
   setupMobileNav();
 
-  // Dynamic Pricing Population
   updatePricingUI();
 
   const page = location.pathname.split("/").pop() || "index.html";

@@ -5,6 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>AI Assistant — CipherQ</title>
   <link rel="stylesheet" href="css/styles.css">
+  <!-- Marked.js for Markdown Rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 </head>
 <body class="workspace-body">
   <div class="sidebar-backdrop" id="sidebar-backdrop" aria-hidden="true"></div>
@@ -79,6 +81,13 @@
         </a>
       </nav>
 
+      <!-- AI Chat History Section -->
+      <div class="sidebar-section-title">Chat History</div>
+      <nav class="workspace-nav ai-history-nav" id="chat-sessions-list">
+        <!-- Sessions will be injected here -->
+        <div class="nav-item muted" style="font-size:0.8rem; padding: 8px 12px;">No previous chats</div>
+      </nav>
+
       <div class="sidebar-system-info">
         <div class="system-status-indicator">
           <span class="status-dot-pulse"></span>
@@ -91,8 +100,8 @@
         <div class="account-identity">
           <div class="account-avatar">
             <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
-              <circle cx="12" cy="7" r="4"></circle>
+                <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"></path>
+                <circle cx="12" cy="7" r="4"></circle>
             </svg>
           </div>
           <div class="account-meta">
@@ -119,7 +128,7 @@
             <span class="status-dot-pulse"></span>
             <span>Local AI</span>
           </div>
-          <h1>Ask your documents.</h1>
+          <h1 id="chat-title">Ask your documents.</h1>
           <p>Chat naturally, then ask questions grounded in your authorized documents.</p>
         </div>
         <div class="nav-actions">
@@ -127,7 +136,7 @@
         </div>
       </header>
 
-      <!-- Local AI Status Banner (Determined from actual application/backend data) -->
+      <!-- Local AI Status Banner -->
       <div class="ai-status-banner" id="ai-engine-banner">
         <div class="ai-status-indicator">
           <span class="ai-status-dot" id="ai-engine-dot"></span>
@@ -136,7 +145,7 @@
         <div class="muted" id="ai-engine-quota-text" style="font-size:0.78rem"></div>
       </div>
 
-      <!-- Plan Restriction Notice (Shown for Free plan or backend 403) -->
+      <!-- Plan Restriction Notice -->
       <div id="ai-plan-notice" class="alert alert-info sr-only" style="margin-bottom:16px">
         Your current plan may limit semantic search or local Q&amp;A. The backend remains authoritative for access.
       </div>
@@ -152,6 +161,12 @@
           <div class="muted">Say hello, or ask a question about an indexed document to get started.</div>
         </div>
       </div>
+
+      <!-- Scroll to Bottom Button -->
+      <button id="btn-scroll-bottom" class="btn btn-primary btn-sm" style="position:fixed; bottom:100px; right:40px; display:none; z-index:10; border-radius:50px; padding: 8px 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.2);">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 21 6 15"></polyline></svg>
+        <span>Scroll to bottom</span>
+      </button>
 
       <!-- Chat Input Form -->
       <form id="ai-chat-form" class="chat-form">
