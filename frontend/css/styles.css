@@ -257,6 +257,74 @@ body.workspace-body {
   min-height: 100vh;
 }
 
+body.workspace-body[data-theme="light"] {
+  --cq-bg: #f1f3ef;
+  --cq-sidebar: #e5ebe6;
+  --cq-surface: #ffffff;
+  --cq-surface-hover: #f2f6f3;
+  --cq-surface-raised: #f8faf8;
+  --cq-surface-sunken: #edf2ee;
+  --cq-border: rgba(20, 55, 37, 0.14);
+  --cq-border-subtle: rgba(20, 55, 37, 0.08);
+  --cq-border-hover: rgba(13, 118, 86, 0.42);
+  --cq-text: #17231b;
+  --cq-text-muted: #5c6b60;
+  --cq-text-dim: #77857a;
+  --cq-emerald: #087a58;
+  --cq-emerald-glow: rgba(13, 118, 86, 0.14);
+  --cq-emerald-hover: #07513e;
+  --cq-emerald-dark: #07513e;
+  --cq-danger-bg: rgba(165, 68, 59, 0.1);
+  --cq-danger-border: rgba(165, 68, 59, 0.24);
+  background-image:
+    radial-gradient(ellipse 70% 35% at 20% 0%, rgba(13, 118, 86, 0.08), transparent),
+    radial-gradient(circle at 90% 100%, rgba(181, 138, 67, 0.08), transparent 30rem);
+}
+
+body[data-theme="dark"]:not(.workspace-body) {
+  --ink: #edf4ee;
+  --ink-soft: #d4e2d7;
+  --surface: #0e1511;
+  --surface-raised: #17231b;
+  --surface-dark: #0a100c;
+  --line: #2d4435;
+  --line-dark: #52715c;
+  --muted: #a6b5a9;
+  --muted-dark: #b9c8bd;
+  --ivory: #f4f7f2;
+  --emerald: #36c995;
+  --emerald-light: #173d2d;
+  --emerald-deep: #63d8aa;
+  --gold-light: #40351f;
+  --shadow: 0 22px 70px rgba(0, 0, 0, .32);
+  --shadow-soft: 0 10px 30px rgba(0, 0, 0, .22);
+  background:
+    radial-gradient(circle at 8% 0%, rgba(18, 104, 72, .2), transparent 30rem),
+    radial-gradient(circle at 92% 18%, rgba(104, 78, 22, .12), transparent 26rem),
+    var(--surface);
+}
+
+body[data-theme="dark"]:not(.workspace-body) .site-header {
+  background: rgba(14, 21, 17, .88);
+  border-color: var(--line);
+}
+
+body[data-theme="dark"]:not(.workspace-body) .card,
+body[data-theme="dark"]:not(.workspace-body) .workflow-step {
+  background: linear-gradient(145deg, rgba(23, 35, 27, .98), rgba(17, 27, 21, .94));
+  border-color: var(--line);
+}
+
+body[data-theme="dark"]:not(.workspace-body) .btn-outline {
+  color: var(--ink-soft);
+  background: rgba(23, 35, 27, .7);
+  border-color: var(--line);
+}
+
+body[data-theme="dark"]:not(.workspace-body) .price-card-muted {
+  background: linear-gradient(145deg, rgba(28, 39, 31, .95), rgba(19, 29, 22, .9));
+}
+
 .workspace {
   display: flex;
   min-height: 100vh;

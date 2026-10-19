@@ -30,7 +30,7 @@ class User(Base):
     id = Column(String(36), primary_key=True, default=lambda: str(uuid.uuid4()))
     email = Column(String(255), unique=True, nullable=False, index=True)
     hashed_password = Column(String(255), nullable=False)
-    plan_type = Column(String(20), nullable=False, default="FREE")  # "FREE" or "PREMIUM"
+    plan_type = Column(String(20), nullable=False, default="FREE")  # "FREE", "PREMIUM", or "CREATOR"
     is_active = Column(Integer, nullable=False, default=1)
     created_at = Column(DateTime, nullable=False, default=utc_now)
 
@@ -162,4 +162,3 @@ Index("ix_chunks_user_file", FileChunk.user_id, FileChunk.file_id)
 Index("ix_embeddings_user", ChunkEmbedding.user_id)
 Index("ix_cleanup_status_retries", CleanupQueue.status, CleanupQueue.retry_count)
 Index("ix_plan_audits_user_created", PlanAuditEvent.user_id, PlanAuditEvent.created_at)
-

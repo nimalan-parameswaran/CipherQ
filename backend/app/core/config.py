@@ -41,6 +41,7 @@ class Settings(BaseSettings):
     # Plan Storage Caps (Decimal GB: 1 GB = 1,000,000,000 bytes)
     FREE_QUOTA_BYTES: int = 1_000_000_000       # 1 GB
     PREMIUM_QUOTA_BYTES: int = 5_000_000_000    # 5 GB
+    CREATOR_QUOTA_BYTES: int = 25_000_000_000   # 25 GB
 
     # Administrative Operations Token (Development / Local Administration)
     ADMIN_TOKEN: str = "cipherq-dev-admin-secret-2026"

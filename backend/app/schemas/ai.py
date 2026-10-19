@@ -36,3 +36,4 @@ class QueryAnswerResponse(BaseModel):
     citations: List[CitationResponse]
     plan_tier: str
     mode_used: str
+    response_kind: str = "GROUNDED"

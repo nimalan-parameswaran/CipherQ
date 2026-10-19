@@ -4,6 +4,36 @@ const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => 
   "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
 }[char]));
 
+function applyTheme(theme) {
+  const selected = theme === "dark" ? "dark" : "light";
+  document.body.dataset.theme = selected;
+  localStorage.setItem("cipherq-theme", selected);
+  document.querySelectorAll("[data-theme-toggle]").forEach((button) => {
+    button.textContent = selected === "dark" ? "☀ Light" : "☾ Dark";
+    button.setAttribute("aria-label", `Switch to ${selected === "dark" ? "light" : "dark"} theme`);
+  });
+}
+
+function setupThemeToggle() {
+  const existing = document.querySelector("[data-theme-toggle]");
+  if (existing) {
+    existing.onclick = () => applyTheme(document.body.dataset.theme === "dark" ? "light" : "dark");
+    return;
+  }
+
+  const host = document.body.classList.contains("workspace-body")
+    ? document.querySelector(".workspace-top .nav-actions")
+    : document.querySelector(".site-header .nav-actions");
+  if (!host) return;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "btn btn-outline btn-sm theme-toggle";
+  button.dataset.themeToggle = "true";
+  host.prepend(button);
+  button.onclick = () => applyTheme(document.body.dataset.theme === "dark" ? "light" : "dark");
+  applyTheme(document.body.dataset.theme || "light");
+}
+
 function formatBytes(bytes) {
   if (!bytes || bytes <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -76,6 +106,7 @@ function ensureAuthModal() {
               <select class="form-control" id="reg-plan">
                 <option value="FREE">Free · 1 GB</option>
                 <option value="PREMIUM">Premium · 5 GB + local AI</option>
+                <option value="CREATOR">Creator · 25 GB + 500 AI queries</option>
               </select>
             </div>
             <button class="btn btn-primary" id="btn-submit-register" type="submit" style="width:100%;margin-top:8px">Create account</button>
@@ -176,7 +207,7 @@ function updateNavbar(user) {
     userDisplays.forEach((el) => { el.textContent = user.email; });
     planBadges.forEach((el) => {
       el.textContent = user.plan_type;
-      el.className = `badge ${user.plan_type === "PREMIUM" ? "badge-premium" : "badge-free"}`;
+      el.className = `badge ${user.plan_type !== "FREE" ? "badge-premium" : "badge-free"}`;
     });
     if (sidebarUser) sidebarUser.textContent = user.email;
 
@@ -196,7 +227,7 @@ function updateNavbar(user) {
     if (user) {
       actions.innerHTML = `
         <span class="nav-user" id="user-display">${escapeHtml(user.email)}</span>
-        <span class="badge ${user.plan_type === "PREMIUM" ? "badge-premium" : "badge-free"}" id="plan-badge">${escapeHtml(user.plan_type)}</span>
+        <span class="badge ${user.plan_type !== "FREE" ? "badge-premium" : "badge-free"}" id="plan-badge">${escapeHtml(user.plan_type)}</span>
         <a class="btn btn-outline btn-sm" href="dashboard.html">Workspace</a>
         <button class="btn btn-dark btn-sm" id="btn-nav-logout">Log out</button>`;
       document.getElementById("btn-nav-logout")?.addEventListener("click", async () => {
@@ -279,14 +310,14 @@ async function initDashboard(user) {
   // AI Capability Metric
   const ai = document.getElementById("ai-status-text");
   if (ai) {
-    ai.textContent = user.plan_type === "PREMIUM"
+    ai.textContent = user.plan_type !== "FREE"
       ? "Semantic Vector Search"
       : "Keyword Search included";
   }
 
   const aiAllowance = document.getElementById("ai-allowance-meta");
   if (aiAllowance) {
-    aiAllowance.textContent = user.plan_type === "PREMIUM"
+    aiAllowance.textContent = user.plan_type !== "FREE"
       ? (usage ? `${usage.ai_queries_today} / ${usage.ai_daily_limit} queries today` : "100 queries / day")
       : "FTS5 Keyword Search (Local)";
   }
@@ -595,8 +626,8 @@ async function initAIChat(user) {
 
   const usage = await api.getUsage().catch(() => null);
 
-  if (user.plan_type === "PREMIUM") {
-    if (statusText) statusText.textContent = "Premium: Hybrid Semantic Vector + Local Gemma Pipeline Active";
+  if (user.plan_type !== "FREE") {
+    if (statusText) statusText.textContent = `${user.plan_type}: Hybrid Semantic Vector + Local Gemma Pipeline Active`;
     if (quotaText && usage) quotaText.textContent = `${usage.ai_queries_today} / ${usage.ai_daily_limit} queries today`;
   } else {
     document.getElementById("ai-plan-notice")?.classList.remove("sr-only");
@@ -738,6 +769,7 @@ async function initAIChat(user) {
       }
 
       const evidenceWarning = result.has_sufficient_evidence
+        || result.response_kind === "CONVERSATION"
         ? ""
         : `<div class="message-evidence-alert alert-warning">
              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
@@ -825,15 +857,17 @@ async function initAccount(user) {
     if (freeAction) {
       freeAction.innerHTML = '<button class="btn btn-outline" style="width:100%" disabled>Active plan</button>';
     }
-  } else if (user.plan_type === "PREMIUM") {
-    const premiumCard = document.getElementById("card-plan-premium");
-    if (premiumCard) {
-      premiumCard.classList.add("active-plan");
-      premiumCard.insertAdjacentHTML("afterbegin", '<span class="current-plan-pill">Current plan</span>');
+  } else if (user.plan_type === "PREMIUM" || user.plan_type === "CREATOR") {
+    const activeCardId = user.plan_type === "CREATOR" ? "card-plan-creator" : "card-plan-premium";
+    const activeActionId = user.plan_type === "CREATOR" ? "plan-action-creator" : "plan-action-premium";
+    const activeCard = document.getElementById(activeCardId);
+    if (activeCard) {
+      activeCard.classList.add("active-plan");
+      activeCard.insertAdjacentHTML("afterbegin", '<span class="current-plan-pill">Current plan</span>');
     }
-    const premiumAction = document.getElementById("plan-action-premium");
-    if (premiumAction) {
-      premiumAction.innerHTML = '<button class="btn btn-outline" style="width:100%" disabled>Active plan</button>';
+    const activeAction = document.getElementById(activeActionId);
+    if (activeAction) {
+      activeAction.innerHTML = '<button class="btn btn-outline" style="width:100%" disabled>Active plan</button>';
     }
   }
 
@@ -841,7 +875,7 @@ async function initAccount(user) {
   const button = document.getElementById("btn-toggle-plan");
   if (!button) return;
 
-  const target = user.plan_type === "PREMIUM" ? "FREE" : "PREMIUM";
+  const target = user.plan_type === "FREE" ? "PREMIUM" : "FREE";
   button.textContent = target === "PREMIUM" ? "Upgrade to Premium" : "Downgrade to Free";
 
   button.addEventListener("click", async () => {
@@ -891,6 +925,8 @@ async function initApp() {
     return;
   }
   updateNavbar(user);
+  applyTheme(localStorage.getItem("cipherq-theme") || "light");
+  setupThemeToggle();
   setupMobileNav();
 
   const page = location.pathname.split("/").pop() || "index.html";

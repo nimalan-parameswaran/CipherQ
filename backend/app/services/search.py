@@ -68,6 +68,15 @@ def sanitize_fts5_query(raw_query: str) -> str:
     return " OR ".join(fts_tokens)
 
 
+def is_conversational_greeting(query: str) -> bool:
+    """Recognize short greetings that should not trigger document retrieval."""
+    normalized = re.sub(r"[^a-z\s]", "", query.casefold()).strip()
+    return normalized in {
+        "hi", "hello", "hey", "hiya", "good morning",
+        "good afternoon", "good evening", "how are you",
+    }
+
+
 class SearchService:
     """Unified search engine combining FTS5 keyword indexing and semantic vectors."""
 
@@ -290,7 +299,7 @@ class SearchService:
         if first_page_hits and self._needs_author_answer(query):
             return first_page_hits
 
-        if plan_type != "PREMIUM":
+        if plan_type not in {"PREMIUM", "CREATOR"}:
             normal_hits = await self.search_fts5(
                 db, user_id, query, limit=limit
             )
@@ -344,11 +353,20 @@ class SearchService:
         If no relevant documents are found, returns an explicit insufficient evidence notice.
         Guarantees zero citation fabrication.
         """
+        if is_conversational_greeting(query):
+            return {
+                "answer": "Hi! I’m CipherQ. Ask me a question about your indexed documents and I’ll retrieve the relevant evidence for you.",
+                "citations": [],
+                "has_sufficient_evidence": True,
+                "response_kind": "CONVERSATION",
+            }
+
         if not hits:
             return {
                 "answer": "The indexed documents in your vault do not contain sufficient evidence to answer this query.",
                 "citations": [],
-                "has_sufficient_evidence": False
+                "has_sufficient_evidence": False,
+                "response_kind": "GROUNDED",
             }
 
         citations = []
@@ -383,6 +401,7 @@ class SearchService:
                         "match_type": hit.match_type,
                     } for hit in hits[:1]],
                     "has_sufficient_evidence": True,
+                    "response_kind": "GROUNDED",
                 }
 
         for hit in hits:
@@ -426,7 +445,8 @@ class SearchService:
         return {
             "answer": "\n".join(answer_lines),
             "citations": citations,
-            "has_sufficient_evidence": True
+            "has_sufficient_evidence": True,
+            "response_kind": "GROUNDED",
         }
 
 

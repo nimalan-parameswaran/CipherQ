@@ -2,7 +2,7 @@
 CipherQ Administrative CLI: Subscription Plan Management
 Direct command-line tool for administrative tier upgrades and downgrades.
 Usage:
-    python -m backend.app.cli.manage_plan <email> <FREE|PREMIUM> [--reason REASON]
+    python -m backend.app.cli.manage_plan <email> <FREE|PREMIUM|CREATOR> [--reason REASON]
 """
 import asyncio
 import sys
@@ -20,8 +20,8 @@ from backend.app.services.entitlements import entitlement_service
 
 async def set_user_plan(email: str, new_plan: str, reason: str = "cli_admin_action") -> int:
     target_plan = new_plan.strip().upper()
-    if target_plan not in ("FREE", "PREMIUM"):
-        print(f"Error: Invalid plan '{new_plan}'. Must be FREE or PREMIUM.")
+    if target_plan not in ("FREE", "PREMIUM", "CREATOR"):
+        print(f"Error: Invalid plan '{new_plan}'. Must be FREE, PREMIUM, or CREATOR.")
         return 1
 
     async with AsyncSessionLocal() as db:
@@ -66,7 +66,7 @@ async def set_user_plan(email: str, new_plan: str, reason: str = "cli_admin_acti
 def main():
     parser = argparse.ArgumentParser(description="CipherQ Subscription Plan Management CLI")
     parser.add_argument("email", help="User email address")
-    parser.add_argument("plan", choices=["FREE", "PREMIUM", "free", "premium"], help="Target plan tier")
+    parser.add_argument("plan", choices=["FREE", "PREMIUM", "CREATOR", "free", "premium", "creator"], help="Target plan tier")
     parser.add_argument("--reason", default="cli_admin_action", help="Audit reason for plan modification")
 
     args = parser.parse_args()

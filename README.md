@@ -115,10 +115,11 @@ flowchart TD
 - **Session Security**: 256-bit random tokens stored hashed (SHA-256); issued via `HttpOnly`, `SameSite=None; Secure` cookies (required for cross-origin GitHub Pages ↔ Cloudflare Tunnel) with header-validated CSRF tokens (`X-CSRF-Token`). When a browser blocks cross-site cookies, the login response provides an opaque token used only in the current tab's `sessionStorage` as a bearer fallback.
 - **Brute-Force Rate Limiting**: In-memory sliding window rate limiters guarding login (5 attempts/min) and registration (3 attempts/min).
 
-### 4. Authoritative Free & Premium Entitlements
+### 4. Authoritative Plan Entitlements
 - **Authoritative Decimal Byte Quotas**:
   - `FREE`: **1 GB** (`1,000,000,000` bytes)
   - `PREMIUM`: **5 GB** (`5,000,000,000` bytes)
+  - `CREATOR`: **25 GB** (`25,000,000,000` bytes), hybrid semantic search, and 500 local AI queries/day
 - **Concurrency-Safe In-Flight Tracking**: `InFlightQuotaTracker` reserves space during uploads to prevent concurrent upload races from exceeding storage limits.
 - **Atomic Commit-Time Re-Check**: Final database transactions re-verify aggregate storage at commit time to prevent race conditions.
 - **Durable Startup Reconciliation**: Recalculates exact physical vault ciphertext usage on server boot, eliminating negative or stale usage counts.
