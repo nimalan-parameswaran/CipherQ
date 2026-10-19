@@ -24,7 +24,7 @@ The frontend is a static site that can be deployed to **GitHub Pages**. The back
 │  Static Frontend (GitHub Pages CDN)                 │
 │  ├── HTML / CSS / ES Modules (no build step)        │
 │  ├── js/config.js  ← set approved HTTPS API origin   │
-│  └── HttpOnly cookie + CSRF token session handling  │
+│  └── HttpOnly cookie or tab-scoped bearer + CSRF   │
 └──────────────────────┬──────────────────────────────┘
                        │ HTTPS API requests
                        │ credentials: include
@@ -112,7 +112,7 @@ flowchart TD
 
 ### 3. Secure Authentication & Session Isolation
 - **Credential Storage**: Passwords hashed with **Argon2id** (`m=64MB`, `t=3`, `p=4`).
-- **Session Security**: 256-bit random tokens stored hashed (SHA-256); issued via `HttpOnly`, `SameSite=None; Secure` cookies (required for cross-origin GitHub Pages ↔ Cloudflare Tunnel) with header-validated CSRF tokens (`X-CSRF-Token`).
+- **Session Security**: 256-bit random tokens stored hashed (SHA-256); issued via `HttpOnly`, `SameSite=None; Secure` cookies (required for cross-origin GitHub Pages ↔ Cloudflare Tunnel) with header-validated CSRF tokens (`X-CSRF-Token`). When a browser blocks cross-site cookies, the login response provides an opaque token used only in the current tab's `sessionStorage` as a bearer fallback.
 - **Brute-Force Rate Limiting**: In-memory sliding window rate limiters guarding login (5 attempts/min) and registration (3 attempts/min).
 
 ### 4. Authoritative Free & Premium Entitlements
@@ -131,6 +131,9 @@ flowchart TD
   - *Tier 1 (Instant Baseline)*: SQLite FTS5 full-text keyword search (< 5 ms latency).
   - *Tier 2 (Semantic Vector)*: Local 384-dimensional vector embeddings via `all-MiniLM-L6-v2` ONNX CPU runtime (~180 MB RAM).
 - **Grounded Citations**: Responses strictly cite document excerpts with file IDs and chunk references.
+- **Intent-aware retrieval**: Title and author questions prioritize page-one evidence, while general queries combine independent keyword matches with semantic ranking.
+- **Deterministic embeddings**: The local hashing fallback uses stable BLAKE2b features, so persisted vectors remain consistent across process restarts.
+- **Answer-first interface**: The assistant presents concise grounded answers and keeps detailed source excerpts behind an expandable Sources control.
 - **Ephemeral Processing**: Decrypted buffers exist only in volatile memory during extraction. Zero plaintext written to disk.
 
 ### 6. Hardened Deployment for Arduino UNO Q (Debian 12)

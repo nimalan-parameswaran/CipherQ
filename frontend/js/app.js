@@ -586,6 +586,7 @@ async function initAIChat(user) {
   const input = document.getElementById("ai-chat-input");
   const history = document.getElementById("ai-chat-history");
   if (!form || !input || !history) return;
+  const clearChatButton = document.getElementById("btn-clear-chat");
 
   // Local AI Status Banner
   const statusText = document.getElementById("ai-engine-status-text");
@@ -633,6 +634,33 @@ async function initAIChat(user) {
         </button>
       </div>
     </div>`;
+
+  const renderEmptyState = () => {
+    history.innerHTML = `
+      <div class="chat-empty-state">
+        <div class="chat-empty-icon">Q</div>
+        <div class="chat-empty-title">Ask your documents</div>
+        <p class="chat-empty-copy">Search your indexed files and get a concise answer grounded in your private workspace.</p>
+        <div class="chat-prompt-chips">
+          <button type="button" class="prompt-chip" data-query="Who is the author of this document?"><span>Who is the author of this document?</span></button>
+          <button type="button" class="prompt-chip" data-query="Summarize the key points in this document."><span>Summarize the key points</span></button>
+          <button type="button" class="prompt-chip" data-query="What are the most important requirements?"><span>Find the important requirements</span></button>
+        </div>
+      </div>`;
+    history.querySelectorAll(".prompt-chip").forEach((chip) => {
+      chip.addEventListener("click", () => {
+        input.value = chip.dataset.query || "";
+        input.focus();
+      });
+    });
+  };
+
+  clearChatButton?.addEventListener("click", () => {
+    if (form.dataset.busy === "true") return;
+    renderEmptyState();
+    input.value = "";
+    input.focus();
+  });
 
   history.querySelectorAll(".prompt-chip").forEach((chip) => {
     chip.addEventListener("click", () => {
