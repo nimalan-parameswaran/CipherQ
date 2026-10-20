@@ -156,18 +156,29 @@ CipherQ operates with complete transparency regarding its security boundaries:
 
 ## Subscription Tiers & Quotas
 
-CipherQ enforces identical cryptographic protections across all plans. Tiers differ strictly by storage quota and AI compute capabilities:
+CipherQ applies the same encryption standards across all plans. Plans differ by storage allowance and AI capabilities. Pay-as-you-go is planned for flexible storage expansion, with online billing integration currently in development.
 
-| Feature | FREE Plan | PREMIUM (Private Vault) | VAULT AI (AI Pro) | CREATOR |
+| Feature | FREE | PREMIUM | VAULT AI | PAY-AS-YOU-GO |
 | :--- | :---: | :---: | :---: | :---: |
-| **Storage Quota** | **1 GB** (`10^9` bytes) | **5 GB** (`5×10^9` bytes) | **5 GB** (`5×10^9` bytes) | **25 GB** (`2.5×10^10` bytes) |
-| **Encryption Standard** | PyNaCl Streaming AEAD | PyNaCl Streaming AEAD | PyNaCl Streaming AEAD | PyNaCl Streaming AEAD |
+| **Storage Allowance** | 1 GB | 5 GB | 5 GB | Flexible |
+| **Encryption** | Streaming AEAD | Streaming AEAD | Streaming AEAD | Streaming AEAD |
 | **File Operations** | Upload, Download, Delete | Upload, Download, Delete | Upload, Download, Delete | Upload, Download, Delete |
-| **Search Engine** | SQLite FTS5 Keyword | SQLite FTS5 Keyword | Hybrid (FTS5 + Semantic ONNX) | Hybrid (FTS5 + Semantic ONNX) |
-| **Grounded Citations** | ✓ Yes | ✓ Yes | ✓ Yes | ✓ Yes |
-| **AI Daily Queries** | Unlimited Keyword | Unlimited Keyword | Up to 100 queries / day | Up to 100 queries / day |
-| **Local Generative LLM** | Direct Excerpts | Direct Excerpts | Optional local loopback Gemma | Optional local loopback Gemma |
-| **Downgrade Protection** | Retains all files | Retains all files | Retains all files | Retains all files |
+| **Search** | SQLite FTS5 | SQLite FTS5 | Hybrid Keyword + Semantic | Hybrid Keyword + Semantic |
+| **Grounded Citations** | Yes | Yes | Yes | Yes |
+| **AI Queries** | Unlimited keyword search | Unlimited keyword search | Up to 100/day | Based on selected allowance |
+| **Local Generative AI** | Direct excerpts | Direct excerpts | Optional local Gemma | Optional local Gemma |
+| **Storage Expansion** | Fixed allowance | Fixed allowance | Fixed allowance | Usage-based, planned |
+| **Downgrade Protection** | Existing files retained | Existing files retained | Existing files retained | Existing files retained |
+
+### Pay-as-you-go billing status
+
+Pay-as-you-go is a planned pricing option intended to let users pay according to their selected storage and AI usage requirements instead of committing to a fixed storage tier.
+
+- **Current status:** Preview; online payment processing and automated billing are not yet integrated.
+- **Current access:** Plan assignments and quotas are managed administratively.
+- **Future billing:** Usage measurement, pricing rules, payment processing, invoices, and billing history will be implemented before paid self-service subscriptions become available.
+
+All plans retain the same encryption protections. Pricing and usage-based charges will be published before the billing service becomes available.
 
 ---
 
