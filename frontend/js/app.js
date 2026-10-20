@@ -317,8 +317,6 @@ function updateNavbar(user) {
         <button id="btn-nav-register" class="btn btn-dark btn-sm">Get started free</button>`;
       applyTheme(document.documentElement.getAttribute("data-theme") || getPreferredTheme(), false);
       setupThemeToggle();
-      document.getElementById("btn-nav-login")?.addEventListener("click", () => openAuthModal("login"));
-      document.getElementById("btn-nav-register")?.addEventListener("click", () => openAuthModal("register"));
     }
   }
 }
@@ -1120,5 +1118,11 @@ async function initApp() {
   if (page === "ai-chat.html") return initAIChat(user);
   if (page === "account.html") return initAccount(user);
 }
+
+document.addEventListener("click", (event) => {
+  const button = event.target.closest("#btn-nav-login, #btn-nav-register");
+  if (!button) return;
+  openAuthModal(button.id === "btn-nav-register" ? "register" : "login");
+});
 
 document.addEventListener("DOMContentLoaded", initApp);

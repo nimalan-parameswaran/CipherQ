@@ -36,6 +36,7 @@ jobs:
           cp -R frontend/. _site/
           find _site -type f \( -name '*.bak' -o -name '*.pre-public.bak' -o -name '*.pre-*.bak' \) -delete
           rm -f _site/js/mock-data.js
+          rm -f '_site/js/api.js`'
           python3 - <<'PYCONFIG'
           from pathlib import Path
           import json, os, re
