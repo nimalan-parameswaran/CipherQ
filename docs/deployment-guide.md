@@ -42,7 +42,7 @@ flowchart LR
         end
     end
 
-    Client -->|HTTPS / WSS (Port 443)| Nginx
+    Client -->|"HTTPS / WSS (Port 443)"| Nginx
     Client -.->|HTTP Port 80| Nginx
     Nginx -->|301 Permanent Redirect to HTTPS| Client
     Nginx -->|Proxy Stream to 127.0.0.1:8000| Uvicorn

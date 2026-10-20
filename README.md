@@ -1,3 +1,5 @@
+![CipherQ](assert/CipherQ.gif)
+
 # CipherQ — Your Private Cloud. Your Personal AI.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
@@ -87,9 +89,9 @@ flowchart TD
         EncVault[("Encrypted Ciphertexts\ndata/vault/*.cqenc")]
     end
 
-    Browser -->|Direct (Dev)| Router
-    Browser -->|HTTPS (Prod)| Nginx
-    Nginx -->|Loopback Proxy| Router
+    Browser -->|"Direct (Dev)"| Router
+    Browser -->|"HTTPS (Prod)"| Nginx
+    Nginx -->|"Loopback Proxy"| Router
 
     Router --> AuthSvc
     Router --> QuotaSvc
